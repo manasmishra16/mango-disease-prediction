@@ -103,9 +103,39 @@ plt.tight_layout()
 plt.savefig('reports/figures/xai/saliency_grid.png')
 
 # %% [markdown]
+# ## LIME Explanations
+#
+# Generate LIME explanations for 1 representative sample per class.
+
+# %%
+from src.models.xai import generate_lime
+from skimage.segmentation import mark_boundaries
+
+# Need raw (non-normalized) dataset for LIME
+raw_dataset = MangoLeafDataset(root_dir='data/raw', transform=None)
+
+fig, axes = plt.subplots(2, 4, figsize=(16, 8))
+for i, ax in enumerate(axes.flat):
+    idx = i * (len(raw_dataset) // 8)
+    image_np, label = raw_dataset[idx]  # Returns raw numpy (cv2 loaded)
+    
+    explanation, temp, mask = generate_lime(
+        model, image_np, val_transforms, class_names,
+        num_samples=100, device=device
+    )
+    
+    ax.imshow(mark_boundaries(temp / 255.0, mask))
+    ax.set_title(f'{class_names[label]}')
+    ax.axis('off')
+
+plt.suptitle('LIME Explanations (top 5 superpixels)', fontsize=14)
+plt.tight_layout()
+plt.savefig('reports/figures/xai/lime_grid.png')
+
+# %% [markdown]
 # ## Qualitative Analysis
 # 
-# After training on GPU, check:
-# - Do Grad-CAM heatmaps highlight the **actual lesion regions** on diseased leaves?
-# - Are healthy leaves showing diffuse, low-activation maps?
-# - Does saliency agree with Grad-CAM?
+# - Grad-CAM heatmaps should highlight **actual lesion regions** on diseased leaves.
+# - Healthy leaves should show diffuse, low-activation maps.
+# - Saliency should agree with Grad-CAM on region importance.
+# - LIME superpixels should overlap with lesion areas identified by Grad-CAM.

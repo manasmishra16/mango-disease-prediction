@@ -59,7 +59,7 @@ def generate_gradcam(model, image_tensor, target_layer, class_idx=None, device='
         alpha=0.5
     )
     
-    cam_extractor.remove_hooks()
+    cam_extractor.clear_hooks()
     
     return result, activation_map[0].squeeze(0).cpu().numpy()
 
