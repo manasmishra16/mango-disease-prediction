@@ -24,6 +24,50 @@ from src.augment import get_transforms
 from src.models.yield_model import build_yield_dataset_monthly, prepare_Xy
 from src.economics import generate_report, EconomicReport
 
+def isolate_leaf(img_bgr):
+    """
+    Removes background using HSV thresholding and OpenCV GrabCut.
+    Ensures model focuses only on the leaf, mitigating domain shift from background noise.
+    """
+    hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+    lower_green = np.array([20, 20, 20])
+    upper_green = np.array([100, 255, 255])
+    mask = cv2.inRange(hsv, lower_green, upper_green)
+    
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return img_bgr 
+        
+    largest_contour = max(contours, key=cv2.contourArea)
+    clean_mask = np.zeros_like(mask)
+    cv2.drawContours(clean_mask, [largest_contour], -1, 255, thickness=cv2.FILLED)
+    
+    x, y, w, h = cv2.boundingRect(largest_contour)
+    pad = 10
+    x = max(0, x - pad)
+    y = max(0, y - pad)
+    w = min(img_bgr.shape[1] - x, w + 2*pad)
+    h = min(img_bgr.shape[0] - y, h + 2*pad)
+    rect = (x, y, w, h)
+    
+    bgdModel = np.zeros((1, 65), np.float64)
+    fgdModel = np.zeros((1, 65), np.float64)
+    
+    gc_mask = np.zeros(img_bgr.shape[:2], np.uint8)
+    gc_mask[:] = cv2.GC_BGD
+    gc_mask[y:y+h, x:x+w] = cv2.GC_PR_FGD
+    gc_mask[clean_mask == 255] = cv2.GC_FGD
+    
+    try:
+        cv2.grabCut(img_bgr, gc_mask, rect, bgdModel, fgdModel, 3, cv2.GC_INIT_WITH_MASK)
+        final_mask = np.where((gc_mask == 2) | (gc_mask == 0), 0, 1).astype('uint8')
+        return img_bgr * final_mask[:, :, np.newaxis]
+    except Exception:
+        return img_bgr
+
 app = FastAPI(title="Mango DL API", description="Phase 6 API for Disease, Yield, and Economics")
 
 app.add_middleware(
@@ -119,7 +163,10 @@ async def predict_disease(file: UploadFile = File(...)):
     contents = await file.read()
     nparr = np.frombuffer(contents, np.uint8)
     img_cv = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    img_rgb = cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB)
+    
+    # Isolate leaf (Remove background to fix internet image domain gap)
+    img_cv_clean = isolate_leaf(img_cv)
+    img_rgb = cv2.cvtColor(img_cv_clean, cv2.COLOR_BGR2RGB)
     
     # Preprocess
     transform = get_transforms(train=False)
