@@ -10,8 +10,8 @@ wheels/
 .venv
 
 # Data and Models
-/data/
-/models/
+/data
+/models
 reports/figures/
 .kaggle/
 graphify-out/
