@@ -9,6 +9,7 @@ if Path.cwd().name != 'mango-disease-prediction':
 
 def test_phase1_data():
     """Phase 1: Verify raw data exists and schema is valid."""
+    img_dir = Path('data/processed/images')
     raw = Path('data/raw')
     processed = Path('data/processed')
     
@@ -16,7 +17,7 @@ def test_phase1_data():
     classes = ['Anthracnose', 'Bacterial Canker', 'Cutting Weevil', 
                'Die Back', 'Gall Midge', 'Healthy', 'Powdery Mildew', 'Sooty Mould']
     for cls in classes:
-        cls_dir = raw / cls
+        cls_dir = img_dir / cls
         assert cls_dir.exists(), f"Missing class dir: {cls_dir}"
         count = len(list(cls_dir.glob('*.*')))
         assert count > 0, f"Empty class dir: {cls_dir}"
@@ -66,7 +67,7 @@ def test_phase2_datasets():
     from torch.utils.data import DataLoader
     
     # Image dataset
-    ds = MangoLeafDataset(root_dir='data/raw', transform=get_transforms(train=False))
+    ds = MangoLeafDataset(root_dir='data/processed/images', transform=get_transforms(train=False))
     assert len(ds) > 0, "Image dataset empty"
     img, label = ds[0]
     assert img.shape == (3, 227, 227), f"Image tensor shape wrong: {img.shape}"
