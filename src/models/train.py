@@ -139,7 +139,7 @@ def main():
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--device', type=str, default='auto',
                         help='Device: cpu, cuda, mps, or auto')
-    parser.add_argument('--data-dir', type=str, default='data/raw')
+    parser.add_argument('--data-dir', type=str, default='data/processed/images')
     parser.add_argument('--output-dir', type=str, default='models')
     parser.add_argument('--patience', type=int, default=10,
                         help='Early stopping patience')

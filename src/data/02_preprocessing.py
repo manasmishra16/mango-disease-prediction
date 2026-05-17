@@ -41,7 +41,7 @@ from src.dataset import MangoLeafDataset, ClimateYieldDataset
 # ## 1. Image Data Pipeline
 
 # %%
-RAW_DIR = Path('data/raw')
+RAW_DIR = Path('data/processed/images')
 REPORTS_DIR = Path('reports/figures')
 
 # Get training transforms (heavy augmentation)
