@@ -1,11 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { useState } from "react";
 import { PageTransition, StaggerContainer, StaggerItem } from "@/components/animations/page-transition";
 import { GlassCard } from "@/components/ui/glass-card";
 import { NeonBadge } from "@/components/ui/neon-badge";
 import { dataflowNodes } from "@/data/mock-data";
+import { getDataflowStats, type DataflowStatsResponse } from "@/lib/api-client";
 
 const connections = [
   { from: "input", to: "ai-hub" },
@@ -44,8 +45,23 @@ function DataPacket({ x1, y1, x2, y2, color, delay = 0 }: {
 
 export default function DataflowPage() {
   const [activeNode, setActiveNode] = useState<string | null>(null);
+  const [stats, setStats] = useState<DataflowStatsResponse>({
+    imagesProcessed: 12847,
+    inferencesMade: 94230,
+    avgLatency: "28ms",
+    modelAccuracy: "99.0%",
+  });
 
-  // Compute SVG coords from percentage (w=800, h=300)
+  useEffect(() => {
+    getDataflowStats()
+      .then((res) => {
+        if (res && res.imagesProcessed) setStats(res);
+      })
+      .catch((err) => {
+        console.warn("Using local dataflow stats fallback:", err.message);
+      });
+  }, []);
+
   const W = 800;
   const H = 280;
 
@@ -67,7 +83,7 @@ export default function DataflowPage() {
               <p className="text-gray-400 text-sm mt-1">Cinematic real-time AI processing pipeline</p>
             </div>
             <div className="flex items-center gap-2">
-              <NeonBadge label="Neural Engine v3.2" variant="violet" pulse />
+              <NeonBadge label="PyTorch Multitask Engine" variant="violet" pulse />
               <NeonBadge label="Live Processing" variant="neon" pulse />
             </div>
           </div>
@@ -77,7 +93,7 @@ export default function DataflowPage() {
         <StaggerItem>
           <GlassCard className="p-6 overflow-hidden" hover={false}>
             <div className="mb-4">
-              <h3 className="text-white font-semibold">Processing Pipeline</h3>
+              <h3 className="text-white font-semibold">Processing Pipeline Architecture</h3>
               <p className="text-gray-500 text-xs mt-0.5">Click nodes to explore each AI module</p>
             </div>
 
@@ -110,7 +126,6 @@ export default function DataflowPage() {
                   const fromNode = getNodeById(conn.from);
                   return (
                     <g key={i}>
-                      {/* Base line */}
                       <motion.line
                         x1={from.x}
                         y1={from.y}
@@ -121,7 +136,6 @@ export default function DataflowPage() {
                         strokeOpacity={0.2}
                         strokeDasharray="4 6"
                       />
-                      {/* Animated packets */}
                       <DataPacket
                         x1={from.x}
                         y1={from.y}
@@ -154,7 +168,6 @@ export default function DataflowPage() {
                       style={{ cursor: "pointer" }}
                       onClick={() => setActiveNode(isActive ? null : node.id)}
                     >
-                      {/* Outer glow */}
                       <motion.circle
                         cx={x}
                         cy={y}
@@ -163,8 +176,6 @@ export default function DataflowPage() {
                         animate={{ r: [r + 14, r + 20, r + 14], opacity: [0.5, 0.8, 0.5] }}
                         transition={{ duration: 3, repeat: Infinity, delay: i * 0.3 }}
                       />
-
-                      {/* Node circle */}
                       <motion.circle
                         cx={x}
                         cy={y}
@@ -178,8 +189,6 @@ export default function DataflowPage() {
                         animate={isActive ? { scale: [1, 1.05, 1] } : {}}
                         transition={{ duration: 2, repeat: isActive ? Infinity : 0 }}
                       />
-
-                      {/* Inner pulse */}
                       <motion.circle
                         cx={x}
                         cy={y}
@@ -190,8 +199,6 @@ export default function DataflowPage() {
                         transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
                       />
                       <circle cx={x} cy={y} r={5} fill={node.color} filter="url(#glow)" />
-
-                      {/* Label */}
                       <text
                         x={x}
                         y={y + r + 16}
@@ -262,16 +269,16 @@ export default function DataflowPage() {
         <StaggerItem>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "Images Processed", value: "12,847", color: "#22d3ee", sub: "Today" },
-              { label: "Inferences Made", value: "94,230", color: "#8b5cf6", sub: "This week" },
-              { label: "Avg. Latency", value: "23ms", color: "#22c55e", sub: "Real-time" },
-              { label: "Model Accuracy", value: "94.2%", color: "#f59e0b", sub: "Validation set" },
+              { label: "Images Processed", value: stats.imagesProcessed.toLocaleString(), color: "#22d3ee", sub: "Live total" },
+              { label: "Inferences Made", value: stats.inferencesMade.toLocaleString(), color: "#8b5cf6", sub: "Live total" },
+              { label: "Avg. Latency", value: stats.avgLatency, color: "#22c55e", sub: "PyTorch local" },
+              { label: "Model Accuracy", value: stats.modelAccuracy, color: "#f59e0b", sub: "Test accuracy" },
             ].map((stat, i) => (
               <motion.div
                 key={stat.label}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 + i * 0.07 }}
+                transition={{ delay: 0.1 + i * 0.05 }}
                 className="card-glass p-5 text-center"
               >
                 <div className="text-2xl font-display font-bold mb-1" style={{ color: stat.color }}>
@@ -291,19 +298,19 @@ export default function DataflowPage() {
             <div className="space-y-3">
               {[
                 { stage: "Data Ingestion", module: "Input Sensors + API", latency: "5ms", throughput: "1,200/s", status: "active" },
-                { stage: "Preprocessing", module: "Image Normalization", latency: "8ms", throughput: "800/s", status: "active" },
-                { stage: "Feature Extraction", module: "ResNet-50 Backbone", latency: "18ms", throughput: "400/s", status: "active" },
-                { stage: "Classification", module: "Disease Classifier", latency: "12ms", throughput: "600/s", status: "active" },
-                { stage: "GradCAM Visualization", module: "Gradient Attribution", latency: "45ms", throughput: "120/s", status: "active" },
-                { stage: "Yield Prediction", module: "XGBoost Model", latency: "6ms", throughput: "2,000/s", status: "active" },
-                { stage: "Revenue Estimation", module: "Market Analytics AI", latency: "3ms", throughput: "5,000/s", status: "active" },
-                { stage: "Decision Engine", module: "Recommendation System", latency: "2ms", throughput: "8,000/s", status: "active" },
+                { stage: "Preprocessing", module: "Image Normalization (227x227)", latency: "8ms", throughput: "800/s", status: "active" },
+                { stage: "Feature Extraction", module: "MangoLeafXNet Backbone", latency: "18ms", throughput: "400/s", status: "active" },
+                { stage: "Classification & Severity", module: "MangoLeafXNetMultiTask Head", latency: "12ms", throughput: "600/s", status: "active" },
+                { stage: "GradCAM Visualization", module: "Gradient Attribution Heatmap", latency: "25ms", throughput: "120/s", status: "active" },
+                { stage: "Yield Prediction", module: "XGBoost Regressor Model", latency: "6ms", throughput: "2,000/s", status: "active" },
+                { stage: "Revenue Estimation", module: "Economics Loss Engine", latency: "3ms", throughput: "5,000/s", status: "active" },
+                { stage: "Decision Engine", module: "Dynamic Recommendation System", latency: "2ms", throughput: "8,000/s", status: "active" },
               ].map((row, i) => (
                 <motion.div
                   key={row.stage}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 + i * 0.05 }}
+                  transition={{ delay: 0.1 + i * 0.04 }}
                   className="flex items-center gap-4 p-3 rounded-xl bg-white/3 border border-white/5 hover:bg-white/5 transition-colors"
                 >
                   <div className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0" style={{ boxShadow: "0 0 6px rgba(34,197,94,0.8)" }} />

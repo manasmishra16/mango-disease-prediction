@@ -12,6 +12,8 @@ wheels/
 # Data and Models
 /data
 /models
+Datasets/
+scratch/
 reports/figures/
 .kaggle/
 graphify-out/

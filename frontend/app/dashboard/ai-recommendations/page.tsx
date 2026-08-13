@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   AlertTriangle,
@@ -18,7 +19,9 @@ import {
 import { PageTransition, StaggerContainer, StaggerItem } from "@/components/animations/page-transition";
 import { GlassCard } from "@/components/ui/glass-card";
 import { NeonBadge } from "@/components/ui/neon-badge";
-import { aiRecommendations } from "@/data/mock-data";
+import { aiRecommendations as defaultRecommendations } from "@/data/mock-data";
+import { getRecommendations, markRecommendationActioned, type RecommendationsResponse } from "@/lib/api-client";
+import type { AIRecommendation } from "@/types";
 
 const iconMap: Record<string, React.ElementType> = {
   AlertTriangle,
@@ -67,7 +70,39 @@ const colorConfig = {
 const severityOrder = { high: 0, medium: 1, low: 2 };
 
 export default function AIRecommendationsPage() {
-  const sorted = [...aiRecommendations].sort(
+  const [data, setData] = useState<RecommendationsResponse>({
+    recommendations: defaultRecommendations,
+    stats: {
+      processedToday: 1842,
+      alertsGenerated: 23,
+      actionsTaken: 17,
+    },
+  });
+
+  const fetchRecs = () => {
+    getRecommendations()
+      .then((res) => {
+        if (res && res.recommendations) setData(res);
+      })
+      .catch((err) => {
+        console.warn("Using local recommendations fallback:", err.message);
+      });
+  };
+
+  useEffect(() => {
+    fetchRecs();
+  }, []);
+
+  const handleActionClick = async (id: number) => {
+    try {
+      await markRecommendationActioned(id);
+      fetchRecs();
+    } catch (err) {
+      console.warn("Action toggle notice:", err);
+    }
+  };
+
+  const sorted = [...data.recommendations].sort(
     (a, b) =>
       severityOrder[a.severity as keyof typeof severityOrder] -
       severityOrder[b.severity as keyof typeof severityOrder]
@@ -81,10 +116,10 @@ export default function AIRecommendationsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-white font-display font-bold text-2xl">AI Recommendations</h2>
-              <p className="text-gray-400 text-sm mt-1">Autonomous farmer decision support powered by MangoDL AI</p>
+              <p className="text-gray-400 text-sm mt-1">Autonomous farmer decision support synthesized from scan, climate & yield data</p>
             </div>
             <div className="flex items-center gap-2">
-              <NeonBadge label="6 Active Alerts" variant="mango" pulse />
+              <NeonBadge label={`${data.stats.alertsGenerated} Active Alerts`} variant="mango" pulse />
               <NeonBadge label="AI Autonomous" variant="violet" />
             </div>
           </div>
@@ -112,14 +147,14 @@ export default function AIRecommendationsPage() {
                   <NeonBadge label="Active" variant="neon" pulse size="sm" />
                 </div>
                 <p className="text-gray-500 text-xs">
-                  Continuously analyzing 247 orchards · Last updated 2 minutes ago · Next analysis in 13 minutes
+                  Continuously analyzing 247 orchards · Real-time inference sync
                 </p>
               </div>
               <div className="hidden md:flex items-center gap-6 text-center">
                 {[
-                  { label: "Processed Today", value: "1,842", color: "#f59e0b" },
-                  { label: "Alerts Generated", value: "23", color: "#ef4444" },
-                  { label: "Actions Taken", value: "17", color: "#22c55e" },
+                  { label: "Processed Today", value: data.stats.processedToday.toLocaleString(), color: "#f59e0b" },
+                  { label: "Alerts Generated", value: data.stats.alertsGenerated, color: "#ef4444" },
+                  { label: "Actions Taken", value: data.stats.actionsTaken, color: "#22c55e" },
                 ].map((stat) => (
                   <div key={stat.label}>
                     <div className="text-lg font-bold" style={{ color: stat.color }}>{stat.value}</div>
@@ -134,9 +169,9 @@ export default function AIRecommendationsPage() {
         {/* Recommendation Cards */}
         <StaggerItem>
           <div className="grid md:grid-cols-2 gap-4">
-            {sorted.map((rec, i) => {
+            {sorted.map((rec: AIRecommendation & { actioned?: boolean }, i) => {
               const Icon = iconMap[rec.icon] ?? AlertTriangle;
-              const cfg = colorConfig[rec.color as keyof typeof colorConfig];
+              const cfg = colorConfig[rec.color as keyof typeof colorConfig] || colorConfig.mango;
               const isHigh = rec.severity === "high";
               const isMedium = rec.severity === "medium";
 
@@ -145,9 +180,10 @@ export default function AIRecommendationsPage() {
                   key={rec.id}
                   initial={{ opacity: 0, y: 24 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 + i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                  className={`card-glass p-5 transition-all duration-300 ${cfg.border} relative overflow-hidden group cursor-pointer`}
+                  transition={{ delay: 0.1 + i * 0.05, duration: 0.4 }}
+                  className={`card-glass p-5 transition-all duration-300 ${cfg.border} relative overflow-hidden group cursor-pointer ${
+                    rec.actioned ? "opacity-60" : ""
+                  }`}
                   style={{ background: `${cfg.glow.replace("0.1", "0.04")}` }}
                 >
                   {/* Severity indicator */}
@@ -157,15 +193,6 @@ export default function AIRecommendationsPage() {
                   {isMedium && (
                     <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-yellow-500/40 to-transparent" />
                   )}
-
-                  {/* Glow orb on hover */}
-                  <div
-                    className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-0 group-hover:opacity-30 transition-opacity duration-500"
-                    style={{
-                      background: `radial-gradient(circle, ${cfg.glow} 0%, transparent 70%)`,
-                      filter: "blur(16px)",
-                    }}
-                  />
 
                   <div className="flex items-start gap-4">
                     <div className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center ${cfg.iconBg}`}
@@ -179,9 +206,9 @@ export default function AIRecommendationsPage() {
                         <h3 className="text-white font-semibold text-sm leading-tight">{rec.title}</h3>
                         <div className="flex-shrink-0">
                           <NeonBadge
-                            label={rec.severity.charAt(0).toUpperCase() + rec.severity.slice(1)}
-                            variant={rec.severity === "high" ? "red" : rec.severity === "medium" ? "mango" : "neon"}
-                            pulse={rec.severity === "high"}
+                            label={rec.actioned ? "Resolved" : rec.severity.charAt(0).toUpperCase() + rec.severity.slice(1)}
+                            variant={rec.actioned ? "neon" : rec.severity === "high" ? "red" : rec.severity === "medium" ? "mango" : "neon"}
+                            pulse={rec.severity === "high" && !rec.actioned}
                             size="sm"
                           />
                         </div>
@@ -197,11 +224,26 @@ export default function AIRecommendationsPage() {
                       <div className="flex items-center justify-between mt-3">
                         <div className="flex items-center gap-1 text-xs text-gray-600">
                           <Clock className="w-3 h-3" />
-                          <span>2 mins ago</span>
+                          <span>Live</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <button className={`text-xs font-medium flex items-center gap-1 ${cfg.icon}`}>
-                            Take Action <ChevronRight className="w-3 h-3" />
+                          <button
+                            onClick={() => handleActionClick(rec.id)}
+                            className={`text-xs font-medium flex items-center gap-1 px-3 py-1 rounded-lg transition-all ${
+                              rec.actioned
+                                ? "bg-green-500/20 text-green-300"
+                                : `${cfg.icon} hover:underline`
+                            }`}
+                          >
+                            {rec.actioned ? (
+                              <>
+                                <CheckCircle className="w-3.5 h-3.5 text-green-400" /> Actioned
+                              </>
+                            ) : (
+                              <>
+                                Take Action <ChevronRight className="w-3 h-3" />
+                              </>
+                            )}
                           </button>
                         </div>
                       </div>
@@ -231,7 +273,7 @@ export default function AIRecommendationsPage() {
                   key={item.label}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 + i * 0.06 }}
+                  transition={{ delay: 0.2 + i * 0.05 }}
                   className="p-4 rounded-xl bg-white/3 border border-white/5 text-center"
                 >
                   <div className="text-xl font-display font-bold mb-1" style={{ color: item.color }}>

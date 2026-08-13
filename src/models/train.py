@@ -1,18 +1,14 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+
 """
 Training script for Disease Detection models.
-
-Usage:
-    PYTHONPATH=. uv run python src/models/train.py --model vanilla --epochs 50 --batch-size 32
-    PYTHONPATH=. uv run python src/models/train.py --model se --epochs 50
-    PYTHONPATH=. uv run python src/models/train.py --model multitask --epochs 50 --lambda-mt 0.7
-    PYTHONPATH=. uv run python src/models/train.py --model efficientnet --epochs 30
-    PYTHONPATH=. uv run python src/models/train.py --model vgg16 --epochs 30
 """
 
 import argparse
 import json
 import time
-from pathlib import Path
 
 import numpy as np
 import torch

@@ -23,8 +23,8 @@ import { useLocalizedText } from "@/lib/localization";
 
 const navItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  { id: "disease-detection", label: "Disease Detection", icon: Microscope, href: "/dashboard/disease-detection", badge: "AI" },
-  { id: "yield-prediction", label: "Yield Prediction", icon: TrendingUp, href: "/dashboard/yield-prediction", badge: "AI" },
+  { id: "disease-detection", label: "Disease Detection", icon: Microscope, href: "/dashboard/disease-detection" },
+  { id: "yield-prediction", label: "Yield Prediction", icon: TrendingUp, href: "/dashboard/yield-prediction" },
   { id: "revenue-analytics", label: "Revenue Analytics", icon: DollarSign, href: "/dashboard/revenue-analytics" },
   { id: "climate-monitoring", label: "Climate Monitor", icon: CloudSun, href: "/dashboard/climate-monitoring" },
   { id: "ai-recommendations", label: "AI Recommendations", icon: Brain, href: "/dashboard/ai-recommendations", badge: "6" },

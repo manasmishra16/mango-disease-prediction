@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Activity, AlertTriangle, DollarSign, MapPin, TreePine, Wheat } from "lucide-react";
 import { ClimateChart } from "@/components/charts/climate-chart";
@@ -10,8 +11,10 @@ import { PageTransition, StaggerContainer, StaggerItem } from "@/components/anim
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { GlassCard } from "@/components/ui/glass-card";
 import { NeonBadge } from "@/components/ui/neon-badge";
-import { orchardData } from "@/data/mock-data";
+import { orchardData as defaultOrchardData } from "@/data/mock-data";
 import { useLocalizedText } from "@/lib/localization";
+import { getDashboardStats } from "@/lib/api-client";
+import type { OrchardRecord } from "@/types";
 
 const riskColors = {
   Low: "neon",
@@ -21,11 +24,34 @@ const riskColors = {
 
 export default function DashboardPage() {
   const { term } = useLocalizedText();
+  const [stats, setStats] = useState({
+    orchards: 247,
+    diseaseRisk: 23,
+    predictedYield: 1842,
+    estimatedRevenue: 2.47,
+    climateHealth: 78,
+  });
+  const [orchardList, setOrchardList] = useState<OrchardRecord[]>(defaultOrchardData);
+
+  useEffect(() => {
+    getDashboardStats()
+      .then((data) => {
+        if (data && data.kpis) {
+          setStats(data.kpis);
+        }
+        if (data && data.orchards) {
+          setOrchardList(data.orchards);
+        }
+      })
+      .catch((err) => {
+        console.warn("Using dashboard local data (backend offline):", err.message);
+      });
+  }, []);
 
   const kpis = [
     {
       title: term("Orchards Monitored"),
-      value: 247,
+      value: stats.orchards,
       icon: TreePine,
       change: 12.4,
       color: "mango" as const,
@@ -33,7 +59,7 @@ export default function DashboardPage() {
     },
     {
       title: term("Disease Risk Score"),
-      value: 23,
+      value: stats.diseaseRisk,
       suffix: "%",
       icon: AlertTriangle,
       change: -5.2,
@@ -42,7 +68,7 @@ export default function DashboardPage() {
     },
     {
       title: term("Predicted Yield"),
-      value: 1842,
+      value: stats.predictedYield,
       suffix: "t",
       icon: Wheat,
       change: 11.4,
@@ -51,7 +77,7 @@ export default function DashboardPage() {
     },
     {
       title: term("Estimated Revenue"),
-      value: 2.47,
+      value: stats.estimatedRevenue,
       prefix: "₹",
       suffix: "Cr",
       decimals: 2,
@@ -62,7 +88,7 @@ export default function DashboardPage() {
     },
     {
       title: term("Climate Health"),
-      value: 78,
+      value: stats.climateHealth,
       suffix: "%",
       icon: Activity,
       change: 3.1,
@@ -142,7 +168,7 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/4">
-                  {orchardData.map((orchard, index) => (
+                  {orchardList.map((orchard, index) => (
                     <motion.tr
                       key={orchard.id}
                       initial={{ opacity: 0, x: -10 }}

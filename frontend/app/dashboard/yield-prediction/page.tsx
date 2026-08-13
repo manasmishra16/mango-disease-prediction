@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Droplets, Thermometer, Wind, TreePine, TrendingUp, Cpu, Target, BarChart3 } from "lucide-react";
 import { PageTransition, StaggerContainer, StaggerItem } from "@/components/animations/page-transition";
@@ -9,8 +9,11 @@ import { GlowButton } from "@/components/ui/glow-button";
 import { NeonBadge } from "@/components/ui/neon-badge";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { YieldChart } from "@/components/charts/yield-chart";
-import { yieldPredictionResult } from "@/data/mock-data";
+import { yieldPredictionResult as defaultPrediction } from "@/data/mock-data";
 import { getStatusColor } from "@/lib/utils";
+import { calculateYield, type YieldCalculateResponse } from "@/lib/api-client";
+import { useDashboardStore } from "@/store/dashboard-store";
+import type { YieldFactor } from "@/types";
 
 interface SliderInputProps {
   label: string;
@@ -32,7 +35,7 @@ function SliderInput({ label, icon: Icon, value, min, max, unit, color, onChange
           <Icon className="w-4 h-4" style={{ color }} />
           <span className="text-sm text-gray-300 font-medium">{label}</span>
         </div>
-        <span className="text-sm font-bold" style={{ color }}>
+        <span className="text-sm font-bold font-mono" style={{ color }}>
           {value}{unit}
         </span>
       </div>
@@ -47,14 +50,14 @@ function SliderInput({ label, icon: Icon, value, min, max, unit, color, onChange
           max={max}
           value={value}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="absolute inset-0 w-full opacity-0 cursor-pointer h-full"
+          className="absolute inset-0 w-full opacity-0 cursor-pointer h-full z-10"
         />
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-white shadow-lg transition-all"
+          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-white shadow-lg transition-all pointer-events-none"
           style={{ left: `calc(${pct}% - 8px)`, background: color }}
         />
       </div>
-      <div className="flex justify-between text-xs text-gray-600">
+      <div className="flex justify-between text-xs text-gray-600 font-mono">
         <span>{min}{unit}</span>
         <span>{max}{unit}</span>
       </div>
@@ -97,42 +100,84 @@ function CircularGauge({ value, max = 100, color, label, size = 120 }: {
             strokeDasharray={`${progress} ${gap}`}
             initial={{ strokeDasharray: `0 ${circumference}` }}
             animate={{ strokeDasharray: `${progress} ${gap}` }}
-            transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 }}
-            style={{ filter: `drop-shadow(0 0 8px ${color}80)` }}
+            transition={{ duration: 1.2, ease: "easeOut" }}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xl font-bold text-white">
-            <AnimatedCounter value={value} duration={1500} />
-          </span>
-          <span className="text-[10px] text-gray-500">/ {max}</span>
+          <span className="text-xl font-bold font-display text-white">{value}%</span>
         </div>
       </div>
-      <span className="text-xs text-gray-400 text-center">{label}</span>
+      <span className="text-xs text-gray-400 text-center font-medium">{label}</span>
     </div>
   );
 }
 
 export default function YieldPredictionPage() {
+  const { setYieldResult: publishYieldResult } = useDashboardStore();
   const [inputs, setInputs] = useState({
-    rainfall: 120,
-    temperature: 32,
-    humidity: 78,
-    soilQuality: 75,
-    orchardSize: 25,
+    rainfall: 140,
+    temperature: 30,
+    humidity: 75,
+    soilQuality: 80,
+    orchardSize: 30,
   });
+
+  const defaultResult: YieldCalculateResponse = {
+    predictedYield: defaultPrediction.predictedYield,
+    confidence: defaultPrediction.confidence,
+    optimalYield: defaultPrediction.optimalYield,
+    lastSeasonYield: defaultPrediction.lastSeasonYield,
+    growthRate: defaultPrediction.growthRate,
+    factors: defaultPrediction.factors,
+  };
+
+  const [yieldResult, setYieldResult] = useState<YieldCalculateResponse>(defaultResult);
+
+  const [isCalculating, setIsCalculating] = useState(false);
+
+  // Publish default yield on mount so revenue page has data immediately
+  useEffect(() => {
+    publishYieldResult(defaultResult);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const performCalculation = useCallback(async (customInputs = inputs) => {
+    setIsCalculating(true);
+    try {
+      const res = await calculateYield(customInputs);
+      if (res && res.predictedYield) {
+        setYieldResult(res);
+        publishYieldResult(res);
+      }
+    } catch (err) {
+      console.warn("Using local yield calculation fallback:", err);
+      const computedYield = Math.round(
+        (customInputs.rainfall / 120) * 0.3 +
+        (1 - Math.abs(customInputs.temperature - 32) / 20) * 0.25 +
+        (customInputs.humidity / 100) * 0.2 +
+        (customInputs.soilQuality / 100) * 0.15 +
+        (customInputs.orchardSize / 50) * 0.1
+      ) * 1842;
+      const fallbackResult = { ...yieldResult, predictedYield: Math.max(computedYield, 500) };
+      setYieldResult(fallbackResult);
+      publishYieldResult(fallbackResult);
+    } finally {
+      setIsCalculating(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inputs, publishYieldResult]);
+
+  // Real-time calculation on slider drag with 300ms debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      performCalculation(inputs);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [inputs, performCalculation]);
 
   const handleInput = (key: string, value: number) => {
     setInputs((prev) => ({ ...prev, [key]: value }));
   };
-
-  const predictedYield = Math.round(
-    (inputs.rainfall / 120) * 0.3 +
-    (1 - Math.abs(inputs.temperature - 32) / 20) * 0.25 +
-    (inputs.humidity / 100) * 0.2 +
-    (inputs.soilQuality / 100) * 0.15 +
-    (inputs.orchardSize / 50) * 0.1
-  ) * 1842;
 
   return (
     <PageTransition>
@@ -142,9 +187,12 @@ export default function YieldPredictionPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-white font-display font-bold text-2xl">Yield Prediction Engine</h2>
-              <p className="text-gray-400 text-sm mt-1">XGBoost-powered seasonal yield forecasting</p>
+              <p className="text-gray-400 text-sm mt-1">XGBoost & Environmental AI seasonal yield forecasting</p>
             </div>
-            <NeonBadge label="Powered by XGBoost AI Modeling" variant="neon" pulse />
+            <div className="flex items-center gap-2">
+              <NeonBadge label="XGBoost Regressor" variant="violet" />
+              <NeonBadge label="89.3% Accuracy" variant="neon" pulse />
+            </div>
           </div>
         </StaggerItem>
 
@@ -152,9 +200,12 @@ export default function YieldPredictionPage() {
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Input Panel */}
             <GlassCard className="p-6 col-span-1" hover={false}>
-              <div className="flex items-center gap-2 mb-6">
-                <Cpu className="w-4 h-4 text-yellow-400" />
-                <h3 className="text-white font-semibold">Environmental Inputs</h3>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <Cpu className="w-4 h-4 text-yellow-400" />
+                  <h3 className="text-white font-semibold">Environmental Sliders</h3>
+                </div>
+                {isCalculating && <span className="text-xs text-yellow-400 animate-pulse">Calculating...</span>}
               </div>
 
               <div className="space-y-6">
@@ -209,111 +260,79 @@ export default function YieldPredictionPage() {
                   onChange={(v) => handleInput("orchardSize", v)}
                 />
 
-                <GlowButton variant="mango" className="w-full" onClick={() => {}}>
+                <GlowButton type="button" variant="mango" className="w-full" onClick={() => performCalculation(inputs)} disabled={isCalculating}>
                   <TrendingUp className="w-4 h-4" />
-                  Recalculate Yield
+                  {isCalculating ? "Calculating..." : "Recalculate Yield Now"}
                 </GlowButton>
               </div>
             </GlassCard>
 
             {/* Prediction Results */}
             <div className="col-span-2 space-y-4">
-              {/* Main Prediction */}
+              {/* Main Prediction Card */}
               <div className="grid grid-cols-3 gap-4">
                 <GlassCard className="p-5 col-span-3" hover={false}>
                   <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-green-500/0 via-green-500/50 to-green-500/0" />
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-gray-400 text-sm mb-1">Predicted Yield</p>
+                      <p className="text-gray-400 text-sm mb-1">Predicted Total Yield</p>
                       <div className="flex items-baseline gap-2">
                         <span className="text-5xl font-display font-bold text-white">
-                          <AnimatedCounter value={predictedYield} duration={2000} />
+                          <AnimatedCounter value={yieldResult.predictedYield} duration={1000} />
                         </span>
                         <span className="text-2xl text-gray-400 font-bold">tonnes</span>
                       </div>
                       <div className="flex items-center gap-3 mt-2">
-                        <NeonBadge label={`${yieldPredictionResult.confidence}% Confidence`} variant="neon" />
-                        <span className="text-xs text-green-400">+{yieldPredictionResult.growthRate}% vs last season</span>
+                        <NeonBadge label={`${yieldResult.confidence}% Confidence`} variant="neon" />
+                        <span className="text-xs text-green-400 font-semibold">
+                          +{yieldResult.growthRate}% vs last season ({yieldResult.lastSeasonYield}t)
+                        </span>
                       </div>
                     </div>
-                    <div className="flex gap-6">
-                      <CircularGauge
-                        value={predictedYield}
-                        max={yieldPredictionResult.optimalYield}
-                        color="#22c55e"
-                        label="vs Optimal"
-                      />
-                    </div>
+                    <CircularGauge
+                      value={Math.round((yieldResult.predictedYield / yieldResult.optimalYield) * 100)}
+                      color="#22c55e"
+                      label="Capacity Attainment"
+                      size={110}
+                    />
                   </div>
                 </GlassCard>
-
-                {/* Factor Analysis */}
-                {yieldPredictionResult.factors.map((factor, i) => (
-                  <motion.div
-                    key={factor.name}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 + i * 0.07 }}
-                    className="card-glass p-4"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs text-gray-400">{factor.name}</span>
-                      <span className="text-xs font-bold" style={{ color: getStatusColor(factor.status) }}>
-                        {factor.impact}%
-                      </span>
-                    </div>
-                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                      <motion.div
-                        className="h-full rounded-full"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${factor.impact}%` }}
-                        transition={{ duration: 1, delay: 0.4 + i * 0.07 }}
-                        style={{ background: getStatusColor(factor.status) }}
-                      />
-                    </div>
-                    <div className="mt-1.5">
-                      <span
-                        className="text-[10px] font-medium capitalize px-2 py-0.5 rounded-full"
-                        style={{
-                          color: getStatusColor(factor.status),
-                          background: `${getStatusColor(factor.status)}15`,
-                        }}
-                      >
-                        {factor.status}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
               </div>
 
-              {/* Seasonal Comparison */}
-              <GlassCard className="p-4" hover={false}>
-                <div className="flex items-center gap-2 mb-3">
-                  <Target className="w-4 h-4 text-yellow-400" />
-                  <h3 className="text-white font-semibold text-sm">Seasonal Comparison</h3>
+              {/* Factor Contributions */}
+              <GlassCard className="p-5" hover={false}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-white font-semibold text-sm">Environmental Factor Contributions</h3>
+                  <Target className="w-4 h-4 text-gray-500" />
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: "Predicted", value: predictedYield, unit: "t", color: "#f59e0b" },
-                    { label: "Optimal", value: yieldPredictionResult.optimalYield, unit: "t", color: "#22c55e" },
-                    { label: "Last Season", value: yieldPredictionResult.lastSeasonYield, unit: "t", color: "#6b7280" },
-                  ].map((item) => (
-                    <div key={item.label} className="text-center p-3 rounded-xl bg-white/3">
-                      <div className="text-xl font-bold font-display" style={{ color: item.color }}>
-                        <AnimatedCounter value={item.value} duration={1500} suffix={item.unit} />
+                <div className="grid grid-cols-2 gap-3">
+                  {yieldResult.factors.map((factor: YieldFactor) => (
+                    <div key={factor.name} className="p-3 rounded-xl bg-white/3 border border-white/5 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-300 font-medium">{factor.name}</span>
+                        <span className="text-xs font-semibold capitalize" style={{ color: getStatusColor(factor.status) }}>
+                          {factor.status}
+                        </span>
                       </div>
-                      <div className="text-xs text-gray-500 mt-0.5">{item.label}</div>
+                      <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${factor.impact}%`,
+                            background: getStatusColor(factor.status),
+                          }}
+                        />
+                      </div>
+                      <div className="text-[10px] text-gray-500 text-right">{factor.impact}% Impact</div>
                     </div>
                   ))}
                 </div>
               </GlassCard>
+
+              {/* Yield Chart */}
+              <YieldChart />
             </div>
           </div>
-        </StaggerItem>
-
-        {/* Yield Forecast Chart */}
-        <StaggerItem>
-          <YieldChart />
         </StaggerItem>
       </StaggerContainer>
     </PageTransition>

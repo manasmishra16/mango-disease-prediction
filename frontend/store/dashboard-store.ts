@@ -1,6 +1,23 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { AppLanguage, AppTheme, DiseaseDetectionResult } from "@/types";
+import type { AppLanguage, AppTheme, DiseaseDetectionResult, YieldFactor } from "@/types";
+
+export interface YieldResultData {
+  predictedYield: number;
+  confidence: number;
+  optimalYield: number;
+  lastSeasonYield: number;
+  growthRate: number;
+  factors: YieldFactor[];
+}
+
+export interface YieldInputsData {
+  rainfall: number;
+  temperature: number;
+  humidity: number;
+  soilQuality: number;
+  orchardSize: number;
+}
 
 interface DashboardStore {
   sidebarOpen: boolean;
@@ -17,14 +34,10 @@ interface DashboardStore {
   setIsScanning: (scanning: boolean) => void;
   scanResult: DiseaseDetectionResult | null;
   setScanResult: (result: DiseaseDetectionResult | null) => void;
-  yieldInputs: {
-    rainfall: number;
-    temperature: number;
-    humidity: number;
-    soilQuality: number;
-    orchardSize: number;
-  };
+  yieldInputs: YieldInputsData;
   setYieldInput: (key: string, value: number) => void;
+  yieldResult: YieldResultData | null;
+  setYieldResult: (result: YieldResultData) => void;
 }
 
 export const useDashboardStore = create<DashboardStore>()(
@@ -60,6 +73,9 @@ export const useDashboardStore = create<DashboardStore>()(
       },
       setYieldInput: (key, value) =>
         set((s) => ({ yieldInputs: { ...s.yieldInputs, [key]: value } })),
+
+      yieldResult: null,
+      setYieldResult: (result) => set({ yieldResult: result }),
     }),
     {
       name: "mangodl-preferences",
