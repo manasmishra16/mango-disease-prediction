@@ -13,6 +13,7 @@ import { yieldPredictionResult as defaultPrediction } from "@/data/mock-data";
 import { getStatusColor } from "@/lib/utils";
 import { useDashboardStore } from "@/store/dashboard-store";
 import type { YieldFactor } from "@/types";
+import { calculateYield, type YieldCalculateResponse } from "@/lib/api-client";
 import { useLocalizedText } from "@/lib/localization";
 
 interface SliderInputProps {

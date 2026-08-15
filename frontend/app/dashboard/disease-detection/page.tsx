@@ -26,6 +26,7 @@ import {
   Target,
   BarChart3,
   FileWarning,
+  Camera,
 } from "lucide-react";
 import { PageTransition, StaggerContainer, StaggerItem } from "@/components/animations/page-transition";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -235,6 +236,7 @@ function SeverityIndicator({ severity }: { severity: string }) {
 export default function DiseaseDetectionPage() {
   const { term } = useLocalizedText();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -506,6 +508,14 @@ export default function DiseaseDetectionPage() {
                     className="hidden"
                     onChange={handleFileInput}
                   />
+                  <input
+                    ref={cameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handleFileInput}
+                  />
 
                   {isScanning && <div className="scanner-line" />}
 
@@ -570,37 +580,52 @@ export default function DiseaseDetectionPage() {
                         <motion.div
                           animate={{ y: [0, -6, 0] }}
                           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                          className="w-20 h-20 rounded-2xl flex items-center justify-center mb-5 mx-auto"
+                          className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center mb-4 sm:mb-5 mx-auto"
                           style={{
                             background: "linear-gradient(135deg, rgba(245,158,11,0.12), rgba(34,197,94,0.08))",
                             border: "1px solid rgba(245,158,11,0.2)",
                             boxShadow: "0 0 30px rgba(245,158,11,0.1)",
                           }}
                         >
-                          <Upload className="w-9 h-9 text-yellow-400" />
+                          <Upload className="w-8 h-8 sm:w-9 sm:h-9 text-yellow-400" />
                         </motion.div>
-                        <p className="text-white font-semibold mb-1.5 text-base">
+                        <p className="text-white font-semibold mb-1 text-sm sm:text-base">
                           {isDragging ? term("Drop your leaf image here") : term("Drop leaf image or click to browse")}
                         </p>
-                        <p className="text-gray-500 text-xs mb-5">{term("Supports JPG, PNG, WebP · Max 10MB")}</p>
-                        <GlowButton type="button" variant="outline" size="sm">
-                          <Upload className="w-4 h-4" />
-                          {term("Browse Files")}
-                        </GlowButton>
+                        <p className="text-gray-500 text-xs mb-4">{term("Supports JPG, PNG, WebP · Max 10MB")}</p>
+
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                          <GlowButton
+                            type="button"
+                            variant="mango"
+                            size="sm"
+                            onClick={() => {
+                              cameraInputRef.current?.click();
+                            }}
+                          >
+                            <Camera className="w-4 h-4" />
+                            <span>Camera Scan</span>
+                          </GlowButton>
+
+                          <GlowButton type="button" variant="outline" size="sm">
+                            <Upload className="w-4 h-4" />
+                            {term("Browse Files")}
+                          </GlowButton>
+                        </div>
                       </motion.div>
                     </>
                   )}
                 </div>
               </GlassCard>
 
-              {/* Sample Leaf Gallery */}
-              <GlassCard className="p-4" hover={false}>
-                <div className="flex items-center gap-2 mb-3">
-                  <Leaf className="w-4 h-4 text-green-400" />
+              {/* Sample Leaf Gallery (Swipeable on mobile) */}
+              <GlassCard className="p-3 sm:p-4" hover={false}>
+                <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                  <Leaf className="w-4 h-4 text-green-400 shrink-0" />
                   <span className="text-xs text-gray-300 font-semibold">{term("Quick Test — Sample Leaves")}</span>
-                  <span className="text-[10px] text-gray-600 ml-auto">{term("Click any to auto-load")}</span>
+                  <span className="text-[10px] text-gray-600 ml-auto hidden sm:inline">{term("Click any to auto-load")}</span>
                 </div>
-                <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none sm:grid sm:grid-cols-8">
                   {SAMPLE_LEAVES.map((sample) => (
                     <motion.button
                       key={sample.name}
@@ -608,7 +633,7 @@ export default function DiseaseDetectionPage() {
                       whileHover={{ scale: 1.06, y: -2 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => selectSample(sample)}
-                      className="p-1.5 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-yellow-500/40 text-center transition-all group"
+                      className="shrink-0 w-20 sm:w-auto p-1.5 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-yellow-500/40 text-center transition-all group"
                     >
                       <div className="w-11 h-11 rounded-lg overflow-hidden mx-auto mb-1 bg-black/40 ring-1 ring-white/[0.06]">
                         {/* eslint-disable-next-line @next/next/no-img-element */}

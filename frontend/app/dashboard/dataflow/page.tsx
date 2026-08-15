@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { PageTransition, StaggerContainer, StaggerItem } from "@/components/animations/page-transition";
 import { GlassCard } from "@/components/ui/glass-card";
+import { NeonBadge } from "@/components/ui/neon-badge";
 import { dataflowNodes } from "@/data/mock-data";
 import { getDataflowStats, type DataflowStatsResponse } from "@/lib/api-client";
 import { useLocalizedText } from "@/lib/localization";

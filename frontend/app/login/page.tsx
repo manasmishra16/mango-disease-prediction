@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { ParticleField } from "@/components/animations/particle-field";
 import { GlassCard } from "@/components/ui/glass-card";
+import { GlowButton } from "@/components/ui/glow-button";
 import { NeonBadge } from "@/components/ui/neon-badge";
 import { useAuthStore } from "@/store/auth-store";
 import { useLocalizedText } from "@/lib/localization";

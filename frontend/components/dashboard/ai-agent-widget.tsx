@@ -234,7 +234,7 @@ Could not connect to online LLM router. Using local Agronomy Knowledge Base:
   return (
     <>
       {/* Floating Launcher Button */}
-      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3">
+      <div className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 flex items-center gap-3">
         {!isOpen && (
           <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -258,15 +258,15 @@ Could not connect to online LLM router. Using local Agronomy Knowledge Base:
             setIsOpen((prev) => !prev);
             setHasUnread(false);
           }}
-          className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-400 via-amber-500 to-amber-600 text-black shadow-[0_0_28px_rgba(245,158,11,0.45)] border border-yellow-300/60 cursor-pointer transition-all"
+          className="relative flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-400 via-amber-500 to-amber-600 text-black shadow-[0_0_28px_rgba(245,158,11,0.45)] border border-yellow-300/60 cursor-pointer transition-all"
           aria-label="Open AI Agronomist Agent"
         >
           {isOpen ? (
-            <X className="h-6 w-6 text-black" />
+            <X className="h-5 w-5 sm:h-6 sm:w-6 text-black" />
           ) : (
             <div className="relative">
-              <Sparkles className="h-6 w-6 text-black animate-pulse" />
-              <div className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 rounded-full bg-green-400 border-2 border-black" />
+              <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-black animate-pulse" />
+              <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-400 border-2 border-black" />
             </div>
           )}
         </motion.button>
@@ -282,8 +282,8 @@ Could not connect to online LLM router. Using local Agronomy Knowledge Base:
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
             className={`fixed z-50 flex flex-col rounded-2xl border border-yellow-500/25 bg-[#0e1217]/95 shadow-[0_12px_48px_rgba(0,0,0,0.8),0_0_32px_rgba(245,158,11,0.15)] backdrop-blur-2xl overflow-hidden transition-all duration-300 ${
               isExpanded
-                ? "bottom-4 right-4 left-4 top-4 md:bottom-6 md:right-6 md:left-auto md:top-auto md:w-[720px] md:h-[82vh]"
-                : "bottom-24 right-4 md:right-6 w-[94vw] max-w-[440px] h-[600px] max-h-[85vh]"
+                ? "bottom-3 right-3 left-3 top-3 md:bottom-6 md:right-6 md:left-auto md:top-auto md:w-[720px] md:h-[82vh]"
+                : "bottom-20 md:bottom-24 right-3 md:right-6 left-3 sm:left-auto sm:w-[440px] h-[78vh] sm:h-[600px] max-h-[85vh]"
             }`}
           >
             {/* Header */}

@@ -101,21 +101,22 @@ export default function DashboardPage() {
     <PageTransition>
       <StaggerContainer className="space-y-5">
         <StaggerItem>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-5">
             {kpis.map((kpi, index) => (
-              <KPICard
-                key={kpi.title}
-                title={kpi.title}
-                value={kpi.value}
-                suffix={kpi.suffix}
-                prefix={kpi.prefix}
-                decimals={kpi.decimals}
-                icon={kpi.icon}
-                change={kpi.change}
-                color={kpi.color}
-                delay={index * 0.05}
-                description={kpi.description}
-              />
+              <div key={kpi.title} className={index === 4 ? "col-span-2 md:col-span-1" : ""}>
+                <KPICard
+                  title={kpi.title}
+                  value={kpi.value}
+                  suffix={kpi.suffix}
+                  prefix={kpi.prefix}
+                  decimals={kpi.decimals}
+                  icon={kpi.icon}
+                  change={kpi.change}
+                  color={kpi.color}
+                  delay={index * 0.05}
+                  description={kpi.description}
+                />
+              </div>
             ))}
           </div>
         </StaggerItem>

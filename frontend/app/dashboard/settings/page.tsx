@@ -24,6 +24,7 @@ import {
 import { PageTransition, StaggerContainer, StaggerItem } from "@/components/animations/page-transition";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlowButton } from "@/components/ui/glow-button";
+import { NeonBadge } from "@/components/ui/neon-badge";
 import { getSettings, saveSettings, type UserSettings } from "@/lib/api-client";
 import { useAuthStore } from "@/store/auth-store";
 import { useLocalizedText } from "@/lib/localization";

@@ -17,6 +17,7 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { NeonBadge } from "@/components/ui/neon-badge";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { climateData as defaultDailyData } from "@/data/mock-data";
+import { ClimateChart } from "@/components/charts/climate-chart";
 import { getClimateMonitorData, type ClimateMonitorResponse } from "@/lib/api-client";
 import { useLocalizedText } from "@/lib/localization";
 
