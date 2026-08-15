@@ -16,9 +16,9 @@ import { PageTransition, StaggerContainer, StaggerItem } from "@/components/anim
 import { GlassCard } from "@/components/ui/glass-card";
 import { NeonBadge } from "@/components/ui/neon-badge";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
-import { ClimateChart } from "@/components/charts/climate-chart";
 import { climateData as defaultDailyData } from "@/data/mock-data";
 import { getClimateMonitorData, type ClimateMonitorResponse } from "@/lib/api-client";
+import { useLocalizedText } from "@/lib/localization";
 
 const defaultWeather: ClimateMonitorResponse = {
   currentWeather: {
@@ -44,6 +44,7 @@ const defaultWeather: ClimateMonitorResponse = {
 };
 
 export default function ClimateMonitoringPage() {
+  const { term } = useLocalizedText();
   const [data, setData] = useState<ClimateMonitorResponse>(defaultWeather);
 
   useEffect(() => {
@@ -74,11 +75,11 @@ export default function ClimateMonitoringPage() {
         <StaggerItem>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-white font-display font-bold text-2xl">Climate Intelligence</h2>
-              <p className="text-gray-400 text-sm mt-1">Live Open-Meteo weather monitoring for Karnataka mango belt</p>
+              <h2 className="text-white font-display font-bold text-2xl">{term("Climate Intelligence")}</h2>
+              <p className="text-gray-400 text-sm mt-1">{term("Live Open-Meteo weather monitoring for Karnataka mango belt")}</p>
             </div>
             <div className="flex items-center gap-2">
-              <NeonBadge label="Live API" variant="neon" pulse />
+              <NeonBadge label={term("Live API")} variant="neon" pulse />
               <NeonBadge label={curr.location || "Hassan, Karnataka"} variant="cyan" />
             </div>
           </div>
@@ -88,12 +89,12 @@ export default function ClimateMonitoringPage() {
         <StaggerItem>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {[
-              { label: "Temperature", value: curr.temp, unit: "°C", icon: Thermometer, color: "#f59e0b" },
-              { label: "Humidity", value: curr.humidity, unit: "%", icon: Droplets, color: "#22d3ee" },
-              { label: "Rainfall", value: curr.rainfall, unit: "mm", icon: CloudRain, color: "#8b5cf6" },
-              { label: "Wind Speed", value: curr.windSpeed, unit: "km/h", icon: Wind, color: "#22c55e" },
-              { label: "UV Index", value: curr.uvIndex, unit: "", icon: Sun, color: "#ef4444" },
-              { label: "Visibility", value: curr.visibility, unit: "km", icon: Eye, color: "#6366f1" },
+              { label: term("Temperature"), value: curr.temp, unit: "°C", icon: Thermometer, color: "#f59e0b" },
+              { label: term("Humidity"), value: curr.humidity, unit: "%", icon: Droplets, color: "#22d3ee" },
+              { label: term("Rainfall"), value: curr.rainfall, unit: "mm", icon: CloudRain, color: "#8b5cf6" },
+              { label: term("Wind Speed"), value: curr.windSpeed, unit: "km/h", icon: Wind, color: "#22c55e" },
+              { label: term("UV Index"), value: curr.uvIndex, unit: "", icon: Sun, color: "#ef4444" },
+              { label: term("Visibility"), value: curr.visibility, unit: "km", icon: Eye, color: "#6366f1" },
             ].map((item, i) => (
               <motion.div
                 key={item.label}
@@ -122,8 +123,8 @@ export default function ClimateMonitoringPage() {
         <StaggerItem>
           <GlassCard className="p-5" hover={false}>
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-white font-semibold">7-Day Live Forecast</h3>
-              <NeonBadge label="Open-Meteo API" variant="violet" />
+              <h3 className="text-white font-semibold">{term("7-Day Live Forecast")}</h3>
+              <NeonBadge label={term("Open-Meteo API")} variant="violet" />
             </div>
             <div className="grid grid-cols-7 gap-3">
               {data.forecast.map((item, i) => {
@@ -143,7 +144,7 @@ export default function ClimateMonitoringPage() {
                     }`}
                   >
                     <span className={`text-xs font-medium ${isToday ? "text-yellow-400" : "text-gray-400"}`}>
-                      {item.day}
+                      {term(item.day)}
                     </span>
                     <WeatherIcon
                       className="w-6 h-6"
@@ -151,7 +152,7 @@ export default function ClimateMonitoringPage() {
                     />
                     <span className="text-white text-sm font-bold">{item.temp}°C</span>
                     <span className="text-[10px] text-gray-500 text-center leading-tight">
-                      {item.condition}
+                      {term(item.condition)}
                     </span>
                   </motion.div>
                 );
@@ -169,10 +170,10 @@ export default function ClimateMonitoringPage() {
         <StaggerItem>
           <GlassCard className="p-5" hover={false}>
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-white font-semibold">Daily Climate Data</h3>
+              <h3 className="text-white font-semibold">{term("Daily Climate Data")}</h3>
               <div className="flex items-center gap-2">
                 <Activity className="w-4 h-4 text-green-400" />
-                <span className="text-xs text-gray-400">Updated via Open-Meteo</span>
+                <span className="text-xs text-gray-400">{term("Updated via Open-Meteo")}</span>
               </div>
             </div>
 
@@ -180,7 +181,7 @@ export default function ClimateMonitoringPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/5">
-                    {["Day", "Temp (°C)", "Rainfall (mm)", "Humidity (%)", "Wind (km/h)", "Farm Impact"].map((col) => (
+                    {[term("Day"), term("Temp (°C)"), term("Rainfall (mm)"), term("Humidity (%)"), term("Wind (km/h)"), term("Farm Impact")].map((col) => (
                       <th key={col} className="text-left text-xs text-gray-500 font-medium py-2 px-3">
                         {col}
                       </th>
@@ -191,10 +192,10 @@ export default function ClimateMonitoringPage() {
                   {data.dailyData.map((row, i) => {
                     const impact =
                       row.temp > 34 || row.humidity > 85
-                        ? { label: "Stress Risk", color: "mango" as const }
+                        ? { label: term("Stress Risk"), color: "mango" as const }
                         : row.rainfall > 30
-                        ? { label: "Flood Risk", color: "red" as const }
-                        : { label: "Optimal", color: "neon" as const };
+                        ? { label: term("Flood Risk"), color: "red" as const }
+                        : { label: term("Optimal"), color: "neon" as const };
                     return (
                       <motion.tr
                         key={row.day}
@@ -203,7 +204,7 @@ export default function ClimateMonitoringPage() {
                         transition={{ delay: 0.2 + i * 0.05 }}
                         className="hover:bg-white/3 transition-colors"
                       >
-                        <td className="py-3 px-3 text-white font-medium">{row.day}</td>
+                        <td className="py-3 px-3 text-white font-medium">{term(row.day)}</td>
                         <td className="py-3 px-3">
                           <span className={row.temp > 34 ? "text-red-400 font-semibold" : "text-gray-300"}>
                             {row.temp}°C

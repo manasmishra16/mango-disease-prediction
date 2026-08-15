@@ -16,6 +16,8 @@ import {
   Settings,
   TrendingUp,
   Zap,
+  Bot,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDashboardStore } from "@/store/dashboard-store";
@@ -23,6 +25,7 @@ import { useLocalizedText } from "@/lib/localization";
 
 const navItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+  { id: "ai-agent", label: "AI Copilot Agent", icon: Sparkles, href: "/dashboard/ai-agent", badge: "LIVE" },
   { id: "disease-detection", label: "Disease Detection", icon: Microscope, href: "/dashboard/disease-detection" },
   { id: "yield-prediction", label: "Yield Prediction", icon: TrendingUp, href: "/dashboard/yield-prediction" },
   { id: "revenue-analytics", label: "Revenue Analytics", icon: DollarSign, href: "/dashboard/revenue-analytics" },

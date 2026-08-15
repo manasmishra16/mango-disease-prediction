@@ -24,9 +24,9 @@ import {
 import { PageTransition, StaggerContainer, StaggerItem } from "@/components/animations/page-transition";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlowButton } from "@/components/ui/glow-button";
-import { NeonBadge } from "@/components/ui/neon-badge";
 import { getSettings, saveSettings, type UserSettings } from "@/lib/api-client";
 import { useAuthStore } from "@/store/auth-store";
+import { useLocalizedText } from "@/lib/localization";
 
 const settingsSections = [
   { id: "profile", label: "Profile", icon: User },
@@ -59,6 +59,7 @@ const defaultUserSettings: UserSettings = {
 };
 
 export default function SettingsPage() {
+  const { term } = useLocalizedText();
   const { user } = useAuthStore();
   const [activeSection, setActiveSection] = useState("profile");
   const [settings, setSettings] = useState<UserSettings>(defaultUserSettings);
@@ -145,17 +146,17 @@ export default function SettingsPage() {
         <StaggerItem>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-white font-display font-bold text-2xl">Platform Settings</h2>
-              <p className="text-gray-400 text-sm mt-1">Configure user account, PyTorch AI engine, notifications, security & integrations</p>
+              <h2 className="text-white font-display font-bold text-2xl">{term("Settings")}</h2>
+              <p className="text-gray-400 text-sm mt-1">{term("Configure your MangoDL platform")}</p>
             </div>
             <div className="flex items-center gap-3">
               {saveSuccess && (
                 <span className="text-xs text-green-400 font-medium flex items-center gap-1">
-                  <CheckCircle className="w-4 h-4 text-green-400" /> Settings Saved
+                  <CheckCircle className="w-4 h-4 text-green-400" /> {term("Settings Saved") || "Settings Saved"}
                 </span>
               )}
               <GlowButton variant="mango" size="sm" onClick={handleSave} disabled={isSaving}>
-                <Save className="w-4 h-4" /> {isSaving ? "Saving..." : "Save Settings"}
+                <Save className="w-4 h-4" /> {isSaving ? term("Saving...") || "Saving..." : term("Save Changes")}
               </GlowButton>
             </div>
           </div>
@@ -180,7 +181,7 @@ export default function SettingsPage() {
                     }`}
                   >
                     <section.icon className="w-4 h-4" />
-                    {section.label}
+                    {term(section.label)}
                   </motion.button>
                 ))}
               </div>
@@ -193,7 +194,7 @@ export default function SettingsPage() {
                 {activeSection === "profile" && (
                   <motion.div key="profile" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
                     <GlassCard className="p-6" hover={false}>
-                      <h3 className="text-white font-semibold text-base mb-5">Profile & Account Information</h3>
+                      <h3 className="text-white font-semibold text-base mb-5">{term("Profile Information")}</h3>
                       <div className="flex items-center gap-5 mb-6 p-4 rounded-2xl bg-white/3 border border-white/5">
                         <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-yellow-400 to-amber-600 flex items-center justify-center text-black text-2xl font-bold shadow-[0_0_25px_rgba(245,158,11,0.35)] shrink-0">
                           {(settings.profile.fullName || "M").charAt(0)}
@@ -202,20 +203,20 @@ export default function SettingsPage() {
                           <p className="text-white font-bold text-lg">{settings.profile.fullName}</p>
                           <p className="text-gray-400 text-sm">{settings.profile.email}</p>
                           <div className="flex gap-2 mt-2">
-                            <NeonBadge label={settings.profile.role || "Orchard Manager"} variant="mango" />
-                            <NeonBadge label="Verified Account" variant="neon" />
+                            <NeonBadge label={term(settings.profile.role || "Orchard Manager")} variant="mango" />
+                            <NeonBadge label={term("Pro Plan")} variant="neon" />
                           </div>
                         </div>
                       </div>
 
                       <div className="grid md:grid-cols-2 gap-4">
                         {[
-                          { label: "Full Name", field: "fullName", type: "text" },
-                          { label: "Email Address", field: "email", type: "email" },
-                          { label: "Phone Number", field: "phone", type: "tel" },
-                          { label: "Location / State", field: "location", type: "text" },
-                          { label: "Organization", field: "organization", type: "text" },
-                          { label: "Platform Role", field: "role", type: "text" },
+                          { label: term("Full Name"), field: "fullName", type: "text" },
+                          { label: term("Email Address"), field: "email", type: "email" },
+                          { label: term("Phone Number"), field: "phone", type: "tel" },
+                          { label: term("Location"), field: "location", type: "text" },
+                          { label: term("Organization"), field: "organization", type: "text" },
+                          { label: term("Role"), field: "role", type: "text" },
                         ].map((item) => (
                           <div key={item.label}>
                             <label className="block text-xs text-gray-400 font-medium mb-1.5">{item.label}</label>
@@ -445,7 +446,50 @@ export default function SettingsPage() {
 
                 {/* 7. API Keys Tab */}
                 {activeSection === "api" && (
-                  <motion.div key="api" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+                  <motion.div key="api" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-6">
+                    {/* LLM Agent API Key */}
+                    <GlassCard className="p-6 space-y-4" hover={false}>
+                      <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                        <div className="flex items-center gap-2">
+                          <Cpu className="w-5 h-5 text-yellow-400" />
+                          <h3 className="text-white font-semibold text-base">MangoDL AI Agent LLM Keys</h3>
+                        </div>
+                        <NeonBadge label="MULTI-PROVIDER" variant="mango" />
+                      </div>
+                      <p className="text-gray-400 text-xs">
+                        Configure your AI LLM API keys for the <strong>AI Copilot Agent</strong>. Supports Google Gemini, Groq, OpenAI, and Anthropic. If left blank, the platform defaults to server-configured keys or the built-in Offline Agronomy Engine.
+                      </p>
+
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-white text-xs font-medium block mb-1.5 flex items-center justify-between">
+                            <span>Google Gemini API Key (Recommended)</span>
+                            <span className="text-[10px] text-yellow-400">gemini-2.5-flash / 2.0-flash</span>
+                          </label>
+                          <input
+                            type="password"
+                            defaultValue={typeof window !== "undefined" ? localStorage.getItem("mangodl_user_api_key") || "" : ""}
+                            onChange={(e) => {
+                              if (typeof window !== "undefined") {
+                                localStorage.setItem("mangodl_user_api_key", e.target.value);
+                              }
+                            }}
+                            placeholder="AIzaSy..."
+                            className="w-full rounded-xl bg-black/50 border border-white/10 px-3.5 py-2.5 text-xs text-yellow-300 font-mono focus:outline-none focus:border-yellow-500/50"
+                          />
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-white/3 border border-white/5 flex items-center justify-between text-xs">
+                          <div>
+                            <span className="text-white font-medium block">Default Agent Model</span>
+                            <span className="text-gray-400 text-[11px]">Auto-fallback to offline agronomy engine enabled</span>
+                          </div>
+                          <NeonBadge label="Gemini 2.5 Flash" variant="neon" />
+                        </div>
+                      </div>
+                    </GlassCard>
+
+                    {/* REST API Secret Key */}
                     <GlassCard className="p-6 space-y-4" hover={false}>
                       <div className="flex items-center gap-2 mb-2">
                         <Key className="w-5 h-5 text-yellow-400" />

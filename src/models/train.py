@@ -245,11 +245,11 @@ def main():
                 'val_acc': val_acc,
                 'args': vars(args),
             }, output_dir / f'{args.model}_best.pt')
-            print(f"  → Saved best model (val_acc={val_acc:.4f})")
+            print(f"  -> Saved best model (val_acc={val_acc:.4f})")
         else:
             patience_counter += 1
             if patience_counter >= args.patience:
-                print(f"  → Early stopping at epoch {epoch}")
+                print(f"  -> Early stopping at epoch {epoch}")
                 break
     
     # Final test evaluation

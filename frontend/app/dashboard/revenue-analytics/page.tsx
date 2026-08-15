@@ -16,6 +16,7 @@ import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { RevenueChart } from "@/components/charts/revenue-chart";
 import { revenueMetrics as defaultMetrics } from "@/data/mock-data";
 import { useDashboardStore, type YieldResultData } from "@/store/dashboard-store";
+import { useLocalizedText } from "@/lib/localization";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   Area, AreaChart, Cell, PieChart, Pie,
@@ -131,6 +132,7 @@ function MetricRing({ value, max = 100, color, size = 72, stroke = 5 }: {
 }
 
 export default function RevenueAnalyticsPage() {
+  const { term } = useLocalizedText();
   const { yieldResult } = useDashboardStore();
 
   // Default fallback when yield hasn't been calculated yet
@@ -271,17 +273,17 @@ export default function RevenueAnalyticsPage() {
                 </motion.div>
                 <div>
                   <h1 className="font-display font-bold text-2xl md:text-3xl gradient-text-hero mb-1">
-                    Revenue Analytics
+                    {term("Revenue Analytics")}
                   </h1>
                   <p className="text-gray-400 text-sm max-w-lg">
-                    All metrics derived from Yield Prediction — Revenue = f(Predicted Yield, Market Grades, Costs)
+                    {term("Premium fintech-grade agricultural revenue intelligence")}
                   </p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <NeonBadge label="Yield-Linked" variant={isLinked ? "neon" : "gray"} pulse={isLinked} />
+                <NeonBadge label={isLinked ? term("Live Yield Data") : term("Revenue Trends")} variant={isLinked ? "neon" : "gray"} pulse={isLinked} />
                 <NeonBadge label={`₹${MARKET_PRICE_PER_KG}/kg`} variant="mango" />
-                <NeonBadge label="Q3 2025 Forecast" variant="cyan" />
+                <NeonBadge label={term("Q3 2025 Forecast")} variant="cyan" />
               </div>
             </div>
 
@@ -334,7 +336,49 @@ export default function RevenueAnalyticsPage() {
         {/* ─── KPI Row ─── */}
         <StaggerItem>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {metricCards.map((card, i) => (
+            {[
+              {
+                label: term("Gross Revenue"),
+                value: revenue.grossRevenueCr,
+                prefix: "₹",
+                suffix: "Cr",
+                decimals: 2,
+                icon: IndianRupee,
+                change: revenue.revenueGrowth,
+                color: "#f59e0b",
+                sub: `${term("From")} ${revenue.yieldTonnes.toLocaleString()}t ${term("Predicted Yield").toLowerCase()}`,
+              },
+              {
+                label: term("Net Profit"),
+                value: revenue.netProfitCr,
+                prefix: "₹",
+                suffix: "Cr",
+                decimals: 2,
+                icon: CircleDollarSign,
+                change: revenue.revenueGrowth * 0.85,
+                color: "#22c55e",
+                sub: `${term("Cost")} ₹${revenue.totalCostCr.toFixed(2)}Cr`,
+              },
+              {
+                label: term("Profit Margin"),
+                value: revenue.profitMargin,
+                suffix: "%",
+                decimals: 1,
+                icon: Percent,
+                change: 4.7,
+                color: "#22d3ee",
+                sub: term("Revenue Efficiency"),
+              },
+              {
+                label: term("Risk Score"),
+                value: revenue.riskScore,
+                suffix: "%",
+                icon: ShieldAlert,
+                change: -6.1,
+                color: revenue.riskScore > 30 ? "#ef4444" : "#f59e0b",
+                sub: term("Risk Analysis"),
+              },
+            ].map((card, i) => (
               <motion.div
                 key={card.label}
                 initial={{ opacity: 0, y: 20 }}
@@ -381,10 +425,10 @@ export default function RevenueAnalyticsPage() {
             <GlassCard className="p-5" hover={false}>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-white font-semibold">Revenue by Market Grade</h3>
-                  <p className="text-[10px] text-gray-500 mt-0.5">Revenue = Yield × Grade% × Price Multiplier × ₹{MARKET_PRICE_PER_KG}/kg</p>
+                  <h3 className="text-white font-semibold">{term("Market Grade Breakdown")}</h3>
+                  <p className="text-[10px] text-gray-500 mt-0.5">{term("Grade-wise revenue computed from predicted yield")}</p>
                 </div>
-                <NeonBadge label="4 Grades" variant="mango" />
+                <NeonBadge label={term("Grade Distribution")} variant="mango" />
               </div>
               <div className="space-y-3">
                 {revenue.gradeBreakdown.map((g, i) => (
@@ -400,7 +444,7 @@ export default function RevenueAnalyticsPage() {
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-sm text-gray-300 font-medium">{g.grade}</span>
                         <div className="flex items-center gap-3">
-                          <span className="text-[10px] text-gray-500">{Math.round(g.qtyKg / 1000)}t · {g.priceMultiplier}× price</span>
+                          <span className="text-[10px] text-gray-500">{Math.round(g.qtyKg / 1000)}t · {g.priceMultiplier}× {term("Price Risk").replace(" Risk", "")}</span>
                           <span className="text-sm font-bold text-white">₹{(g.revenue / 1e7).toFixed(2)}Cr</span>
                         </div>
                       </div>
@@ -420,16 +464,16 @@ export default function RevenueAnalyticsPage() {
 
               {/* Grade total */}
               <div className="mt-4 pt-4 border-t border-white/[0.06] flex items-center justify-between">
-                <span className="text-xs text-gray-400">Total Gross Revenue</span>
+                <span className="text-xs text-gray-400">{term("Gross Revenue")}</span>
                 <span className="text-lg font-display font-bold text-yellow-400">₹{revenue.grossRevenueCr.toFixed(2)}Cr</span>
               </div>
             </GlassCard>
 
             {/* Revenue Efficiency */}
             <GlassCard className="p-5 flex flex-col items-center justify-center" hover={false}>
-              <h3 className="text-white font-semibold text-sm mb-5 self-start">Revenue Efficiency</h3>
+              <h3 className="text-white font-semibold text-sm mb-5 self-start">{term("Revenue Efficiency")}</h3>
               <MetricRing value={revenue.revenueEfficiency} color="#f59e0b" size={120} stroke={8} />
-              <p className="text-gray-400 text-xs mt-3 text-center">vs Optimal Revenue Potential</p>
+              <p className="text-gray-400 text-xs mt-3 text-center">{term("of optimal")}</p>
 
               <div className="w-full mt-5 pt-4 border-t border-white/[0.06] space-y-3">
                 <div className="flex justify-between text-xs">
@@ -463,10 +507,10 @@ export default function RevenueAnalyticsPage() {
             <GlassCard className="p-5 col-span-2" hover={false}>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-white font-semibold">Seasonal Revenue Comparison</h3>
-                  <p className="text-[10px] text-gray-500 mt-0.5">Derived from yield predictions across seasons</p>
+                  <h3 className="text-white font-semibold">{term("Seasonal Revenue Comparison")}</h3>
+                  <p className="text-[10px] text-gray-500 mt-0.5">{term("5 Seasons")}</p>
                 </div>
-                <NeonBadge label="Yield-Linked" variant="neon" />
+                <NeonBadge label={term("Live Yield Data")} variant="neon" />
               </div>
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={seasonalData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
@@ -474,7 +518,7 @@ export default function RevenueAnalyticsPage() {
                   <XAxis dataKey="season" tick={{ fill: "#6b7280", fontSize: 9 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: "#6b7280", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${v}`} />
                   <Tooltip content={<SeasonalTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
-                  <Bar dataKey="revenue" name="Revenue" fill="url(#revenueGrad2)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="revenue" name={term("Revenue")} fill="url(#revenueGrad2)" radius={[6, 6, 0, 0]} />
                   <defs>
                     <linearGradient id="revenueGrad2" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.9} />
@@ -487,8 +531,8 @@ export default function RevenueAnalyticsPage() {
 
             {/* Risk Analysis */}
             <GlassCard className="p-5" hover={false}>
-              <h3 className="text-white font-semibold mb-4">Risk Analysis</h3>
-              <p className="text-[10px] text-gray-500 -mt-3 mb-4">Derived from yield factor impacts</p>
+              <h3 className="text-white font-semibold mb-4">{term("Risk Analysis")}</h3>
+              <p className="text-[10px] text-gray-500 -mt-3 mb-4">{term("Environmental Inputs")}</p>
               <div className="space-y-4">
                 {riskAnalysis.map((risk, i) => (
                   <motion.div
@@ -498,7 +542,7 @@ export default function RevenueAnalyticsPage() {
                     transition={{ delay: 0.1 + i * 0.05 }}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-gray-400">{risk.label}</span>
+                      <span className="text-xs text-gray-400">{term(risk.label)}</span>
                       <span className="text-xs font-semibold" style={{ color: risk.color }}>{risk.value}%</span>
                     </div>
                     <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
@@ -516,10 +560,10 @@ export default function RevenueAnalyticsPage() {
 
               <div className="mt-4 pt-4 border-t border-white/5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-400">Overall Risk Score</span>
+                  <span className="text-xs text-gray-400">{term("Overall Risk Score")}</span>
                   <div className="flex items-center gap-1.5">
                     <span className="text-lg font-bold text-yellow-400">{revenue.riskScore}%</span>
-                    <NeonBadge label={revenue.riskScore <= 25 ? "Low" : revenue.riskScore <= 40 ? "Medium" : "High"}
+                    <NeonBadge label={term(revenue.riskScore <= 25 ? "Low" : revenue.riskScore <= 40 ? "Medium" : "High")}
                       variant={revenue.riskScore <= 25 ? "neon" : revenue.riskScore <= 40 ? "mango" : "red"} size="sm"
                     />
                   </div>
@@ -534,10 +578,10 @@ export default function RevenueAnalyticsPage() {
           <GlassCard className="p-5" hover={false}>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-white font-semibold">AI-Driven Loss Prevention</h3>
-                <p className="text-[10px] text-gray-500 mt-0.5">Savings calculated from yield × disease detection accuracy</p>
+                <h3 className="text-white font-semibold">{term("Loss Prevention Metrics")}</h3>
+                <p className="text-[10px] text-gray-500 mt-0.5">{term("AI Protected")}</p>
               </div>
-              <NeonBadge label="Economics Module" variant="neon" pulse />
+              <NeonBadge label={term("AI Engine")} variant="neon" pulse />
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {lossPrevention.map((metric, i) => (
@@ -553,7 +597,7 @@ export default function RevenueAnalyticsPage() {
                     <span className="text-[10px] text-green-400 font-medium">{metric.change}</span>
                   </div>
                   <div className="text-lg font-bold text-white">{metric.value}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{metric.label}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">{term(metric.label)}</div>
                 </motion.div>
               ))}
             </div>

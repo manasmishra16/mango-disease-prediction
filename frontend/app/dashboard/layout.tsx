@@ -3,6 +3,7 @@
 import { Navbar } from "@/components/dashboard/navbar";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { AuthGuard } from "@/components/app/auth-guard";
+import { AIAgentWidget } from "@/components/dashboard/ai-agent-widget";
 
 export default function DashboardLayout({
   children,
@@ -12,6 +13,7 @@ export default function DashboardLayout({
   return (
     <AuthGuard>
       <div className="flex h-screen overflow-hidden bg-[var(--background)]">
+        <AIAgentWidget />
         <div className="pointer-events-none fixed inset-0 z-0">
           <div
             className="absolute left-1/4 top-0 h-[420px] w-[420px] rounded-full opacity-15"

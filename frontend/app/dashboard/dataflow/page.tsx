@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { PageTransition, StaggerContainer, StaggerItem } from "@/components/animations/page-transition";
 import { GlassCard } from "@/components/ui/glass-card";
-import { NeonBadge } from "@/components/ui/neon-badge";
 import { dataflowNodes } from "@/data/mock-data";
 import { getDataflowStats, type DataflowStatsResponse } from "@/lib/api-client";
+import { useLocalizedText } from "@/lib/localization";
 
 const connections = [
   { from: "input", to: "ai-hub" },
@@ -44,6 +44,7 @@ function DataPacket({ x1, y1, x2, y2, color, delay = 0 }: {
 }
 
 export default function DataflowPage() {
+  const { term } = useLocalizedText();
   const [activeNode, setActiveNode] = useState<string | null>(null);
   const [stats, setStats] = useState<DataflowStatsResponse>({
     imagesProcessed: 12847,
@@ -79,12 +80,12 @@ export default function DataflowPage() {
         <StaggerItem>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-white font-display font-bold text-2xl">AI Dataflow Visualization</h2>
-              <p className="text-gray-400 text-sm mt-1">Cinematic real-time AI processing pipeline</p>
+              <h2 className="text-white font-display font-bold text-2xl">{term("AI Dataflow Visualization")}</h2>
+              <p className="text-gray-400 text-sm mt-1">{term("Cinematic real-time AI processing pipeline")}</p>
             </div>
             <div className="flex items-center gap-2">
-              <NeonBadge label="PyTorch Multitask Engine" variant="violet" pulse />
-              <NeonBadge label="Live Processing" variant="neon" pulse />
+              <NeonBadge label={term("PyTorch Multitask Engine")} variant="violet" pulse />
+              <NeonBadge label={term("Live Processing")} variant="neon" pulse />
             </div>
           </div>
         </StaggerItem>
@@ -93,8 +94,8 @@ export default function DataflowPage() {
         <StaggerItem>
           <GlassCard className="p-6 overflow-hidden" hover={false}>
             <div className="mb-4">
-              <h3 className="text-white font-semibold">Processing Pipeline Architecture</h3>
-              <p className="text-gray-500 text-xs mt-0.5">Click nodes to explore each AI module</p>
+              <h3 className="text-white font-semibold">{term("Processing Pipeline Architecture")}</h3>
+              <p className="text-gray-500 text-xs mt-0.5">{term("Click nodes to explore each AI module")}</p>
             </div>
 
             <div className="relative w-full overflow-x-auto">
@@ -269,10 +270,10 @@ export default function DataflowPage() {
         <StaggerItem>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "Images Processed", value: stats.imagesProcessed.toLocaleString(), color: "#22d3ee", sub: "Live total" },
-              { label: "Inferences Made", value: stats.inferencesMade.toLocaleString(), color: "#8b5cf6", sub: "Live total" },
-              { label: "Avg. Latency", value: stats.avgLatency, color: "#22c55e", sub: "PyTorch local" },
-              { label: "Model Accuracy", value: stats.modelAccuracy, color: "#f59e0b", sub: "Test accuracy" },
+              { label: term("Images Processed"), value: stats.imagesProcessed.toLocaleString(), color: "#22d3ee", sub: term("Live total") },
+              { label: term("Inferences Made"), value: stats.inferencesMade.toLocaleString(), color: "#8b5cf6", sub: term("Live total") },
+              { label: term("Avg. Latency"), value: stats.avgLatency, color: "#22c55e", sub: term("PyTorch local") },
+              { label: term("Model Accuracy"), value: stats.modelAccuracy, color: "#f59e0b", sub: term("Test accuracy") },
             ].map((stat, i) => (
               <motion.div
                 key={stat.label}
@@ -294,17 +295,17 @@ export default function DataflowPage() {
         {/* Pipeline Detail Table */}
         <StaggerItem>
           <GlassCard className="p-5" hover={false}>
-            <h3 className="text-white font-semibold mb-4">Pipeline Stage Details</h3>
+            <h3 className="text-white font-semibold mb-4">{term("Pipeline Stage Details")}</h3>
             <div className="space-y-3">
               {[
-                { stage: "Data Ingestion", module: "Input Sensors + API", latency: "5ms", throughput: "1,200/s", status: "active" },
-                { stage: "Preprocessing", module: "Image Normalization (227x227)", latency: "8ms", throughput: "800/s", status: "active" },
-                { stage: "Feature Extraction", module: "MangoLeafXNet Backbone", latency: "18ms", throughput: "400/s", status: "active" },
-                { stage: "Classification & Severity", module: "MangoLeafXNetMultiTask Head", latency: "12ms", throughput: "600/s", status: "active" },
-                { stage: "GradCAM Visualization", module: "Gradient Attribution Heatmap", latency: "25ms", throughput: "120/s", status: "active" },
-                { stage: "Yield Prediction", module: "XGBoost Regressor Model", latency: "6ms", throughput: "2,000/s", status: "active" },
-                { stage: "Revenue Estimation", module: "Economics Loss Engine", latency: "3ms", throughput: "5,000/s", status: "active" },
-                { stage: "Decision Engine", module: "Dynamic Recommendation System", latency: "2ms", throughput: "8,000/s", status: "active" },
+                { stage: term("Data Ingestion"), module: term("Input Sensors + API"), latency: "5ms", throughput: "1,200/s", status: "active" },
+                { stage: term("Preprocessing"), module: term("Image Normalization (227x227)"), latency: "8ms", throughput: "800/s", status: "active" },
+                { stage: term("Feature Extraction"), module: term("MangoLeafXNet Backbone"), latency: "18ms", throughput: "400/s", status: "active" },
+                { stage: term("Classification & Severity"), module: term("MangoLeafXNetMultiTask Head"), latency: "12ms", throughput: "600/s", status: "active" },
+                { stage: term("GradCAM Visualization"), module: term("Gradient Attribution Heatmap"), latency: "25ms", throughput: "120/s", status: "active" },
+                { stage: term("Yield Prediction"), module: term("XGBoost Regressor Model"), latency: "6ms", throughput: "2,000/s", status: "active" },
+                { stage: term("Revenue Estimation"), module: term("Economics Loss Engine"), latency: "3ms", throughput: "5,000/s", status: "active" },
+                { stage: term("Decision Engine"), module: term("Dynamic Recommendation System"), latency: "2ms", throughput: "8,000/s", status: "active" },
               ].map((row, i) => (
                 <motion.div
                   key={row.stage}
@@ -321,13 +322,13 @@ export default function DataflowPage() {
                   </div>
                   <div className="text-center hidden md:block">
                     <div className="text-cyan-400 text-xs font-semibold">{row.latency}</div>
-                    <div className="text-gray-600 text-[10px]">latency</div>
+                    <div className="text-gray-600 text-[10px]">{term("latency")}</div>
                   </div>
                   <div className="text-center hidden md:block">
                     <div className="text-yellow-400 text-xs font-semibold">{row.throughput}</div>
-                    <div className="text-gray-600 text-[10px]">throughput</div>
+                    <div className="text-gray-600 text-[10px]">{term("throughput")}</div>
                   </div>
-                  <NeonBadge label="Active" variant="neon" size="sm" />
+                  <NeonBadge label={term("Active")} variant="neon" size="sm" />
                 </motion.div>
               ))}
             </div>

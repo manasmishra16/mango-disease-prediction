@@ -18,6 +18,7 @@ import Link from "next/link";
 
 const pageLabels: Record<string, { title: string; subtitle: string }> = {
   "/dashboard": { title: "Dashboard Overview", subtitle: "AI Agriculture Intelligence Platform" },
+  "/dashboard/ai-agent": { title: "AI Copilot Agent", subtitle: "Multimodal Agronomy Intelligence & Decision Copilot" },
   "/dashboard/disease-detection": { title: "Disease Detection", subtitle: "AI-powered leaf analysis using ResNet-50 + GradCAM" },
   "/dashboard/yield-prediction": { title: "Yield Prediction", subtitle: "XGBoost-powered seasonal forecasting engine" },
   "/dashboard/revenue-analytics": { title: "Revenue Analytics", subtitle: "Premium fintech-grade agricultural revenue insights" },
@@ -87,6 +88,15 @@ interface SearchIndexItem {
 }
 
 const globalSearchIndex: SearchIndexItem[] = [
+  {
+    id: "ai-agent",
+    category: "Modules",
+    title: "AI Copilot Agronomist Agent",
+    subtitle: "Real-time AI Chatbot for mango disease treatments, drip irrigation & market strategy",
+    href: "/dashboard/ai-agent",
+    icon: Sparkles,
+    keywords: ["agent", "copilot", "chat", "assistant", "ai", "agronomist", "bot", "llm", "gemini", "groq", "prescription", "ask"],
+  },
   {
     id: "disease-detection",
     category: "Modules",

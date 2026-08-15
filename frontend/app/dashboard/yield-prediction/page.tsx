@@ -11,9 +11,9 @@ import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { YieldChart } from "@/components/charts/yield-chart";
 import { yieldPredictionResult as defaultPrediction } from "@/data/mock-data";
 import { getStatusColor } from "@/lib/utils";
-import { calculateYield, type YieldCalculateResponse } from "@/lib/api-client";
 import { useDashboardStore } from "@/store/dashboard-store";
 import type { YieldFactor } from "@/types";
+import { useLocalizedText } from "@/lib/localization";
 
 interface SliderInputProps {
   label: string;
@@ -113,6 +113,7 @@ function CircularGauge({ value, max = 100, color, label, size = 120 }: {
 }
 
 export default function YieldPredictionPage() {
+  const { term } = useLocalizedText();
   const { setYieldResult: publishYieldResult } = useDashboardStore();
   const [inputs, setInputs] = useState({
     rainfall: 140,
@@ -186,12 +187,12 @@ export default function YieldPredictionPage() {
         <StaggerItem>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-white font-display font-bold text-2xl">Yield Prediction Engine</h2>
-              <p className="text-gray-400 text-sm mt-1">XGBoost & Environmental AI seasonal yield forecasting</p>
+              <h2 className="text-white font-display font-bold text-2xl">{term("Yield Prediction Engine")}</h2>
+              <p className="text-gray-400 text-sm mt-1">{term("XGBoost & Environmental AI seasonal yield forecasting")}</p>
             </div>
             <div className="flex items-center gap-2">
-              <NeonBadge label="XGBoost Regressor" variant="violet" />
-              <NeonBadge label="89.3% Accuracy" variant="neon" pulse />
+              <NeonBadge label={term("XGBoost Regressor")} variant="violet" />
+              <NeonBadge label={term("89.3% Accuracy")} variant="neon" pulse />
             </div>
           </div>
         </StaggerItem>
@@ -203,14 +204,14 @@ export default function YieldPredictionPage() {
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
                   <Cpu className="w-4 h-4 text-yellow-400" />
-                  <h3 className="text-white font-semibold">Environmental Sliders</h3>
+                  <h3 className="text-white font-semibold">{term("Environmental Sliders")}</h3>
                 </div>
-                {isCalculating && <span className="text-xs text-yellow-400 animate-pulse">Calculating...</span>}
+                {isCalculating && <span className="text-xs text-yellow-400 animate-pulse">{term("Calculating...")}</span>}
               </div>
 
               <div className="space-y-6">
                 <SliderInput
-                  label="Rainfall"
+                  label={term("Rainfall")}
                   icon={Droplets}
                   value={inputs.rainfall}
                   min={0}
@@ -220,7 +221,7 @@ export default function YieldPredictionPage() {
                   onChange={(v) => handleInput("rainfall", v)}
                 />
                 <SliderInput
-                  label="Temperature"
+                  label={term("Temperature")}
                   icon={Thermometer}
                   value={inputs.temperature}
                   min={15}
@@ -230,7 +231,7 @@ export default function YieldPredictionPage() {
                   onChange={(v) => handleInput("temperature", v)}
                 />
                 <SliderInput
-                  label="Humidity"
+                  label={term("Humidity")}
                   icon={Wind}
                   value={inputs.humidity}
                   min={30}
@@ -240,7 +241,7 @@ export default function YieldPredictionPage() {
                   onChange={(v) => handleInput("humidity", v)}
                 />
                 <SliderInput
-                  label="Soil Quality"
+                  label={term("Soil Quality")}
                   icon={TreePine}
                   value={inputs.soilQuality}
                   min={0}
@@ -250,7 +251,7 @@ export default function YieldPredictionPage() {
                   onChange={(v) => handleInput("soilQuality", v)}
                 />
                 <SliderInput
-                  label="Orchard Size"
+                  label={term("Orchard Size")}
                   icon={BarChart3}
                   value={inputs.orchardSize}
                   min={1}
@@ -262,7 +263,7 @@ export default function YieldPredictionPage() {
 
                 <GlowButton type="button" variant="mango" className="w-full" onClick={() => performCalculation(inputs)} disabled={isCalculating}>
                   <TrendingUp className="w-4 h-4" />
-                  {isCalculating ? "Calculating..." : "Recalculate Yield Now"}
+                  {isCalculating ? term("Calculating...") : term("Recalculate Yield Now")}
                 </GlowButton>
               </div>
             </GlassCard>
@@ -275,24 +276,24 @@ export default function YieldPredictionPage() {
                   <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-green-500/0 via-green-500/50 to-green-500/0" />
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-gray-400 text-sm mb-1">Predicted Total Yield</p>
+                      <p className="text-gray-400 text-sm mb-1">{term("Predicted Total Yield")}</p>
                       <div className="flex items-baseline gap-2">
                         <span className="text-5xl font-display font-bold text-white">
                           <AnimatedCounter value={yieldResult.predictedYield} duration={1000} />
                         </span>
-                        <span className="text-2xl text-gray-400 font-bold">tonnes</span>
+                        <span className="text-2xl text-gray-400 font-bold">{term("tonnes")}</span>
                       </div>
                       <div className="flex items-center gap-3 mt-2">
-                        <NeonBadge label={`${yieldResult.confidence}% Confidence`} variant="neon" />
+                        <NeonBadge label={`${yieldResult.confidence}% ${term("Confidence")}`} variant="neon" />
                         <span className="text-xs text-green-400 font-semibold">
-                          +{yieldResult.growthRate}% vs last season ({yieldResult.lastSeasonYield}t)
+                          +{yieldResult.growthRate}% {term("vs last season")} ({yieldResult.lastSeasonYield}t)
                         </span>
                       </div>
                     </div>
                     <CircularGauge
                       value={Math.round((yieldResult.predictedYield / yieldResult.optimalYield) * 100)}
                       color="#22c55e"
-                      label="Capacity Attainment"
+                      label={term("Capacity Attainment")}
                       size={110}
                     />
                   </div>
@@ -302,16 +303,16 @@ export default function YieldPredictionPage() {
               {/* Factor Contributions */}
               <GlassCard className="p-5" hover={false}>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-white font-semibold text-sm">Environmental Factor Contributions</h3>
+                  <h3 className="text-white font-semibold text-sm">{term("Environmental Factor Contributions")}</h3>
                   <Target className="w-4 h-4 text-gray-500" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {yieldResult.factors.map((factor: YieldFactor) => (
                     <div key={factor.name} className="p-3 rounded-xl bg-white/3 border border-white/5 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-300 font-medium">{factor.name}</span>
+                        <span className="text-xs text-gray-300 font-medium">{term(factor.name)}</span>
                         <span className="text-xs font-semibold capitalize" style={{ color: getStatusColor(factor.status) }}>
-                          {factor.status}
+                          {term(factor.status.charAt(0).toUpperCase() + factor.status.slice(1))}
                         </span>
                       </div>
                       <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
@@ -323,7 +324,7 @@ export default function YieldPredictionPage() {
                           }}
                         />
                       </div>
-                      <div className="text-[10px] text-gray-500 text-right">{factor.impact}% Impact</div>
+                      <div className="text-[10px] text-gray-500 text-right">{factor.impact}% {term("Impact")}</div>
                     </div>
                   ))}
                 </div>

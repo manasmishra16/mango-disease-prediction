@@ -35,6 +35,7 @@ import { diseaseDetectionHistory as defaultHistory } from "@/data/mock-data";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { scanDiseaseImage, getDiseaseHistory, type DiseaseHistoryRecord, type DiseaseScanResponse } from "@/lib/api-client";
 import type { DiseaseDetectionResult } from "@/types";
+import { useLocalizedText } from "@/lib/localization";
 
 const confidenceLevels = [
   { min: 90, label: "Very High", color: "#22c55e", bg: "rgba(34,197,94,0.12)" },
@@ -206,6 +207,7 @@ function ConfidenceRing({ value, size = 80, stroke = 6 }: { value: number; size?
 
 /* ─── Severity Level Indicator ─── */
 function SeverityIndicator({ severity }: { severity: string }) {
+  const { term } = useLocalizedText();
   const config = severityConfig[severity] || severityConfig.Low;
   return (
     <div className="flex items-center gap-2">
@@ -224,20 +226,21 @@ function SeverityIndicator({ severity }: { severity: string }) {
         />
       ))}
       <span className="text-xs font-semibold ml-1" style={{ color: config.color }}>
-        {severity}
+        {term(severity)}
       </span>
     </div>
   );
 }
 
 export default function DiseaseDetectionPage() {
+  const { term } = useLocalizedText();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { isScanning, setIsScanning, scanResult, setScanResult } = useDashboardStore();
   const [scanProgress, setScanProgress] = useState(0);
-  const [history, setHistory] = useState<DiseaseHistoryRecord[]>(defaultHistory);
+  const [history, setHistory] = useState<DiseaseHistoryRecord[]>(defaultHistory as unknown as DiseaseHistoryRecord[]);
   const [heatmapB64, setHeatmapB64] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"original" | "gradcam" | "compare">("original");
@@ -442,28 +445,28 @@ export default function DiseaseDetectionPage() {
                 </motion.div>
                 <div>
                   <h1 className="font-display font-bold text-2xl md:text-3xl gradient-text-hero mb-1">
-                    Disease Detection Engine
+                    {term("Disease Detection Engine")}
                   </h1>
                   <p className="text-gray-400 text-sm max-w-lg">
-                    Upload leaf images for real-time PyTorch CNN inference with Grad-CAM neural attention visualization
+                    {term("Upload leaf images for real-time PyTorch CNN inference with Grad-CAM neural attention visualization")}
                   </p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <NeonBadge label="OOD Guard" variant="cyan" />
-                <NeonBadge label="SE-CNN" variant="violet" />
-                <NeonBadge label="Multi-Task" variant="mango" />
-                <NeonBadge label="99.0% Accuracy" variant="neon" pulse />
+                <NeonBadge label={term("OOD Guard")} variant="cyan" />
+                <NeonBadge label={term("SE-CNN")} variant="violet" />
+                <NeonBadge label={term("Multi-Task")} variant="mango" />
+                <NeonBadge label={term("99.0% Accuracy")} variant="neon" pulse />
               </div>
             </div>
 
             {/* Model info strip */}
             <div className="relative mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 pt-4 border-t border-white/[0.06]">
               {[
-                { icon: Brain, label: "MangoLeafXNetSE", sub: "9.47M params" },
-                { icon: Layers, label: "8 Disease Classes", sub: "14.8k images" },
-                { icon: Target, label: "Grad-CAM", sub: "Attention maps" },
-                { icon: Shield, label: "Leaf Guard", sub: "OOD rejection" },
+                { icon: Brain, label: term("MangoLeafXNetSE"), sub: term("9.47M params") },
+                { icon: Layers, label: term("8 Disease Classes"), sub: term("14.8k images") },
+                { icon: Target, label: term("Grad-CAM"), sub: term("Attention maps") },
+                { icon: Shield, label: term("Leaf Guard"), sub: term("OOD rejection") },
               ].map((item) => (
                 <div key={item.label} className="flex items-center gap-2 text-xs">
                   <item.icon className="w-3.5 h-3.5 text-gray-500" />
@@ -510,8 +513,8 @@ export default function DiseaseDetectionPage() {
                     <div className="relative w-full h-72 rounded-xl overflow-hidden group">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={viewMode === "gradcam" && heatmapB64 ? heatmapB64 : previewUrl}
-                        alt="Uploaded leaf"
+                        src={previewUrl}
+                        alt="Original leaf specimen"
                         className="w-full h-full object-contain bg-black/40"
                       />
 
@@ -577,12 +580,12 @@ export default function DiseaseDetectionPage() {
                           <Upload className="w-9 h-9 text-yellow-400" />
                         </motion.div>
                         <p className="text-white font-semibold mb-1.5 text-base">
-                          {isDragging ? "Drop your leaf image here" : "Drop leaf image or click to browse"}
+                          {isDragging ? term("Drop your leaf image here") : term("Drop leaf image or click to browse")}
                         </p>
-                        <p className="text-gray-500 text-xs mb-5">Supports JPG, PNG, WebP · Max 10MB</p>
+                        <p className="text-gray-500 text-xs mb-5">{term("Supports JPG, PNG, WebP · Max 10MB")}</p>
                         <GlowButton type="button" variant="outline" size="sm">
                           <Upload className="w-4 h-4" />
-                          Browse Files
+                          {term("Browse Files")}
                         </GlowButton>
                       </motion.div>
                     </>
@@ -594,8 +597,8 @@ export default function DiseaseDetectionPage() {
               <GlassCard className="p-4" hover={false}>
                 <div className="flex items-center gap-2 mb-3">
                   <Leaf className="w-4 h-4 text-green-400" />
-                  <span className="text-xs text-gray-300 font-semibold">Quick Test — Sample Leaves</span>
-                  <span className="text-[10px] text-gray-600 ml-auto">Click any to auto-load</span>
+                  <span className="text-xs text-gray-300 font-semibold">{term("Quick Test — Sample Leaves")}</span>
+                  <span className="text-[10px] text-gray-600 ml-auto">{term("Click any to auto-load")}</span>
                 </div>
                 <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
                   {SAMPLE_LEAVES.map((sample) => (
@@ -642,12 +645,12 @@ export default function DiseaseDetectionPage() {
                         >
                           <Activity className="w-5 h-5" />
                         </motion.div>
-                        Analyzing... {scanProgress}%
+                        {term("Analyzing...")} {scanProgress}%
                       </>
                     ) : (
                       <>
                         <Sparkles className="w-5 h-5" />
-                        Run AI Disease Analysis
+                        {term("Run AI Disease Analysis")}
                       </>
                     )}
                   </GlowButton>
@@ -665,7 +668,7 @@ export default function DiseaseDetectionPage() {
                 >
                   <GlassCard className="p-4" hover={false}>
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs text-gray-400 font-medium">Pipeline Progress</span>
+                      <span className="text-xs text-gray-400 font-medium">{term("Pipeline Progress")}</span>
                       <span className="text-xs font-bold" style={{ color: getConfidenceColor(scanProgress) }}>
                         {scanProgress}%
                       </span>
@@ -705,7 +708,7 @@ export default function DiseaseDetectionPage() {
                             )}
                           </motion.div>
                           <span className={`text-[9px] font-medium ${scanStage >= i ? "text-gray-300" : "text-gray-600"}`}>
-                            {stage.label}
+                            {term(stage.label)}
                           </span>
                         </div>
                       ))}
@@ -744,16 +747,16 @@ export default function DiseaseDetectionPage() {
                             </motion.div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
-                                <h3 className="text-white font-bold text-lg">Non-Mango Leaf Detected</h3>
-                                <NeonBadge label="OOD Guard" variant="red" />
+                                <h3 className="text-white font-bold text-lg">{term("Non-Mango Leaf Detected")}</h3>
+                                <NeonBadge label={term("OOD Guard")} variant="red" />
                               </div>
                               <p className="text-red-200/80 text-sm leading-relaxed mb-4">
-                                {currentResult.description || "The uploaded image appears to be a non-leaf object. Please upload a clear photo of a mango leaf for disease analysis."}
+                                {currentResult.description || term("The uploaded image appears to be a non-leaf object. Please upload a clear photo of a mango leaf for disease analysis.")}
                               </p>
                               <div className="p-3 rounded-xl bg-black/40 border border-white/[0.06] text-xs text-gray-400 flex items-start gap-2">
                                 <Leaf className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
                                 <span>
-                                  <strong className="text-yellow-400">Tip:</strong> Take a close-up photo of a mango leaf under good lighting, or use a Quick Test sample above.
+                                  <strong className="text-yellow-400">{term("Tip:")}</strong> {term("Take a close-up photo of a mango leaf under good lighting, or use a Quick Test sample above.")}
                                 </span>
                               </div>
                             </div>
@@ -778,7 +781,7 @@ export default function DiseaseDetectionPage() {
                               <div className="shrink-0">
                                 <ConfidenceRing value={currentResult.confidence} size={88} stroke={6} />
                                 <p className="text-[10px] text-gray-500 text-center mt-1.5 font-medium">
-                                  {getConfidenceLabel(currentResult.confidence)}
+                                  {term(getConfidenceLabel(currentResult.confidence))}
                                 </p>
                               </div>
 
@@ -802,9 +805,9 @@ export default function DiseaseDetectionPage() {
                             {/* Metric Cards */}
                             <div className="grid grid-cols-3 gap-3 mt-5">
                               {[
-                                { label: "Disease Class", value: currentResult.disease, icon: Zap, color: "#f59e0b", bg: "rgba(245,158,11,0.08)" },
-                                { label: "Severity Level", value: currentResult.severity, icon: TrendingUp, color: severityConfig[currentResult.severity]?.color || "#f59e0b", bg: "rgba(239,68,68,0.08)" },
-                                { label: "AI Confidence", value: `${currentResult.confidence}%`, icon: BarChart3, color: getConfidenceColor(currentResult.confidence), bg: confidenceLevels.find(l => currentResult.confidence >= l.min)?.bg || "rgba(34,197,94,0.08)" },
+                                { label: term("Disease Class"), value: currentResult.disease, icon: Zap, color: "#f59e0b", bg: "rgba(245,158,11,0.08)" },
+                                { label: term("Severity Level"), value: currentResult.severity, icon: TrendingUp, color: severityConfig[currentResult.severity]?.color || "#f59e0b", bg: "rgba(239,68,68,0.08)" },
+                                { label: term("AI Confidence"), value: `${currentResult.confidence}%`, icon: BarChart3, color: getConfidenceColor(currentResult.confidence), bg: confidenceLevels.find(l => currentResult.confidence >= l.min)?.bg || "rgba(34,197,94,0.08)" },
                               ].map((stat) => (
                                 <motion.div
                                   key={stat.label}
@@ -835,8 +838,8 @@ export default function DiseaseDetectionPage() {
                               <FlaskConical className="w-4 h-4 text-cyan-400" />
                             </div>
                             <div>
-                              <h3 className="text-white font-semibold text-sm">Recommended Treatment</h3>
-                              <p className="text-gray-500 text-[10px]">AI-suggested pathology response</p>
+                              <h3 className="text-white font-semibold text-sm">{term("Recommended Treatment")}</h3>
+                              <p className="text-gray-500 text-[10px]">{term("AI-suggested pathology response")}</p>
                             </div>
                           </div>
                           <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
@@ -850,7 +853,7 @@ export default function DiseaseDetectionPage() {
                             <div className="flex items-center justify-between mb-4">
                               <div className="flex items-center gap-2">
                                 <Eye className="w-4 h-4 text-cyan-400" />
-                                <h3 className="text-white font-semibold text-sm">Grad-CAM Neural Attention</h3>
+                                <h3 className="text-white font-semibold text-sm">{term("Grad-CAM Neural Attention")}</h3>
                               </div>
                               <div className="flex gap-1 p-0.5 rounded-lg bg-white/[0.04] border border-white/[0.06]">
                                 {(["original", "gradcam", "compare"] as const).map((mode) => (
@@ -867,7 +870,7 @@ export default function DiseaseDetectionPage() {
                                         : "text-gray-500 hover:text-gray-300"
                                     }`}
                                   >
-                                    {mode === "compare" ? "Compare" : mode === "gradcam" ? "Grad-CAM" : "Original"}
+                                    {mode === "compare" ? term("Compare") : mode === "gradcam" ? term("Grad-CAM") : term("Original")}
                                   </button>
                                 ))}
                               </div>
@@ -882,7 +885,7 @@ export default function DiseaseDetectionPage() {
                                   <img src={previewUrl} alt="Original" className="w-full h-full object-contain" />
                                 )}
                                 <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/70 text-[9px] text-gray-300 font-semibold backdrop-blur-sm">
-                                  ORIGINAL
+                                  {term("ORIGINAL")}
                                 </span>
                               </div>
                               <div className="relative h-52 bg-black/40 flex items-center justify-center">
@@ -890,8 +893,10 @@ export default function DiseaseDetectionPage() {
                                   /* eslint-disable-next-line @next/next/no-img-element */
                                   <img src={heatmapB64} alt="Grad-CAM" className="w-full h-full object-contain" />
                                 )}
-                                <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-cyan-500/30 text-[9px] text-cyan-200 font-semibold backdrop-blur-sm">
-                                  GRAD-CAM
+                                <span className={`absolute top-2 left-2 px-2 py-0.5 rounded-md text-[9px] font-semibold backdrop-blur-sm ${
+                                  isHealthy ? "bg-green-500/30 text-green-300 border border-green-500/30" : "bg-cyan-500/30 text-cyan-200"
+                                }`}>
+                                  {isHealthy ? term("HEALTHY TISSUE (0% LESION)") : term("LESION ATTENTION MAP")}
                                 </span>
                               </div>
                             </div>
@@ -905,16 +910,25 @@ export default function DiseaseDetectionPage() {
                                   className="w-full h-full object-contain"
                                 />
                               ) : (
-                                <span className="text-gray-500 text-xs font-medium">No Heatmap Loaded</span>
+                                <span className="text-gray-500 text-xs font-medium">{term("No Heatmap Loaded")}</span>
                               )}
                               {viewMode === "gradcam" && (
-                                <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-1 rounded-md bg-black/60 backdrop-blur-sm">
-                                  <div className="flex gap-0.5">
-                                    {["#3b82f6", "#06b6d4", "#eab308", "#f59e0b", "#ef4444"].map((c) => (
-                                      <div key={c} className="w-4 h-1.5 rounded-sm" style={{ background: c }} />
-                                    ))}
-                                  </div>
-                                  <span className="text-[8px] text-gray-400 font-medium">Low → High Attention</span>
+                                <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-black/70 border border-white/10 backdrop-blur-sm">
+                                  {isHealthy ? (
+                                    <>
+                                      <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                                      <span className="text-[9px] text-green-300 font-medium">{term("Chlorophyll Health Aura (0% Lesion)")}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div className="flex gap-0.5">
+                                        {["#3b82f6", "#06b6d4", "#eab308", "#f59e0b", "#ef4444"].map((c) => (
+                                          <div key={c} className="w-3.5 h-1.5 rounded-sm" style={{ background: c }} />
+                                        ))}
+                                      </div>
+                                      <span className="text-[9px] text-gray-300 font-medium">{term("Lesion Hotspots (Low → High)")}</span>
+                                    </>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -942,17 +956,17 @@ export default function DiseaseDetectionPage() {
                       >
                         <Scan className="w-10 h-10 text-gray-600" />
                       </motion.div>
-                      <p className="text-gray-400 font-semibold mb-1.5 text-base">Awaiting Analysis</p>
+                      <p className="text-gray-400 font-semibold mb-1.5 text-base">{term("Awaiting Analysis")}</p>
                       <p className="text-gray-600 text-sm max-w-xs mx-auto leading-relaxed">
-                        Upload a mango leaf image or select a Quick Test sample, then click &quot;Run AI Disease Analysis&quot; to begin.
+                        {term("Upload a mango leaf image or select a Quick Test sample, then click \"Run AI Disease Analysis\" to begin.")}
                       </p>
                       <div className="flex items-center justify-center gap-4 mt-6">
                         {[
-                          { icon: Upload, label: "Upload" },
+                          { icon: Upload, label: term("Upload") },
                           { icon: ChevronRight, label: "" },
-                          { icon: Brain, label: "Analyze" },
+                          { icon: Brain, label: term("Analyze") },
                           { icon: ChevronRight, label: "" },
-                          { icon: CheckCircle, label: "Results" },
+                          { icon: CheckCircle, label: term("Results") },
                         ].map((step, i) => (
                           <div key={i} className="flex items-center gap-1.5">
                             <step.icon className="w-4 h-4 text-gray-600" />
@@ -974,16 +988,16 @@ export default function DiseaseDetectionPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-yellow-400" />
-                <h3 className="text-white font-semibold">Detection History</h3>
-                <span className="text-[10px] text-gray-600 font-medium ml-1">{history.length} records</span>
+                <h3 className="text-white font-semibold">{term("Detection History")}</h3>
+                <span className="text-[10px] text-gray-600 font-medium ml-1">{history.length} {term("records")}</span>
               </div>
-              <NeonBadge label="Live Database" variant="gray" />
+              <NeonBadge label={term("Live Database")} variant="gray" />
             </div>
 
             {/* Table header */}
             <div className="grid grid-cols-[40px_1fr_120px_80px_80px_24px] gap-3 px-3 py-2 mb-1">
-              {["#", "Image", "Disease", "Conf.", "Severity", ""].map((h) => (
-                <span key={h} className="text-[10px] text-gray-600 font-semibold uppercase tracking-wider">{h}</span>
+              {["#", term("Image"), term("Disease"), term("Conf."), term("Severity"), ""].map((h, idx) => (
+                <span key={idx} className="text-[10px] text-gray-600 font-semibold uppercase tracking-wider">{h}</span>
               ))}
             </div>
 

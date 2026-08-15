@@ -18,11 +18,12 @@ import {
 } from "lucide-react";
 import { ParticleField } from "@/components/animations/particle-field";
 import { GlassCard } from "@/components/ui/glass-card";
-import { GlowButton } from "@/components/ui/glow-button";
 import { NeonBadge } from "@/components/ui/neon-badge";
 import { useAuthStore } from "@/store/auth-store";
+import { useLocalizedText } from "@/lib/localization";
 
 export default function LoginPage() {
+  const { term } = useLocalizedText();
   const router = useRouter();
   const { login, register, demoLogin, isLoading, error, clearError } = useAuthStore();
 
@@ -143,7 +144,7 @@ export default function LoginPage() {
                   : "text-gray-400 hover:text-white"
               }`}
             >
-              Sign In
+              {term("Sign In")}
             </button>
             <button
               type="button"
@@ -154,7 +155,7 @@ export default function LoginPage() {
                   : "text-gray-400 hover:text-white"
               }`}
             >
-              Create Account
+              {term("Create Account")}
             </button>
           </div>
 
@@ -168,8 +169,8 @@ export default function LoginPage() {
             className="w-full mb-6 p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 hover:bg-cyan-500/20 text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(34,211,238,0.15)]"
           >
             <Zap className="w-4 h-4 text-cyan-400" />
-            <span>⚡ Instant Demo Sign In</span>
-            <NeonBadge label="1-Click" variant="cyan" size="sm" />
+            <span>{term("⚡ Instant Demo Sign In")}</span>
+            <NeonBadge label={term("1-Click")} variant="cyan" size="sm" />
           </motion.button>
 
           <div className="relative flex items-center justify-center mb-6">
@@ -177,7 +178,7 @@ export default function LoginPage() {
               <div className="w-full border-t border-white/10" />
             </div>
             <span className="relative px-3 bg-[#0c0d13] text-[10px] text-gray-500 uppercase tracking-widest font-semibold">
-              Or {mode === "login" ? "Sign In with Credentials" : "Register New Account"}
+              {mode === "login" ? term("Sign In with Credentials") : term("Register New Account")}
             </span>
           </div>
 
@@ -201,7 +202,7 @@ export default function LoginPage() {
             {/* Full Name (Register mode) */}
             {mode === "register" && (
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-                <label className="block text-xs font-medium text-gray-400 mb-1.5">Full Name</label>
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">{term("Full Name")}</label>
                 <div className="relative">
                   <UserIcon className="absolute left-3.5 top-3 w-4 h-4 text-gray-500" />
                   <input
@@ -218,7 +219,7 @@ export default function LoginPage() {
 
             {/* Email Address */}
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1.5">Email Address</label>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">{term("Email Address")}</label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-3 w-4 h-4 text-gray-500" />
                 <input
@@ -234,7 +235,7 @@ export default function LoginPage() {
 
             {/* Password */}
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1.5">Password</label>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">{term("Password")}</label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-3 w-4 h-4 text-gray-500" />
                 <input
@@ -259,21 +260,21 @@ export default function LoginPage() {
             {mode === "register" && (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Professional Role</label>
+                  <label className="block text-xs font-medium text-gray-400 mb-1.5">{term("Professional Role")}</label>
                   <select
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
                     className="w-full px-3 py-2.5 rounded-xl bg-[#0c0d13] border border-white/10 text-white text-xs focus:outline-none focus:border-yellow-500/50 cursor-pointer"
                   >
-                    <option value="Orchard Manager">Orchard Manager</option>
-                    <option value="Senior Agronomist">Senior Agronomist</option>
-                    <option value="Agricultural Researcher">Agricultural Researcher</option>
-                    <option value="Farm Owner">Farm Owner</option>
+                    <option value="Orchard Manager">{term("Orchard Manager")}</option>
+                    <option value="Senior Agronomist">{term("Senior Agronomist")}</option>
+                    <option value="Agricultural Researcher">{term("Agricultural Researcher")}</option>
+                    <option value="Farm Owner">{term("Farm Owner")}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Organization / Farm Name</label>
+                  <label className="block text-xs font-medium text-gray-400 mb-1.5">{term("Organization / Farm Name")}</label>
                   <div className="relative">
                     <Building className="absolute left-3.5 top-3 w-4 h-4 text-gray-500" />
                     <input
@@ -293,23 +294,23 @@ export default function LoginPage() {
               <div className="flex items-center justify-between text-xs pt-1">
                 <label className="flex items-center gap-2 cursor-pointer text-gray-400 hover:text-gray-300">
                   <input type="checkbox" defaultChecked className="rounded border-white/10 bg-white/5 text-yellow-500 focus:ring-0" />
-                  <span>Remember session</span>
+                  <span>{term("Remember session")}</span>
                 </label>
-                <a href="#forgot" className="text-yellow-400 hover:underline">Forgot password?</a>
+                <a href="#forgot" className="text-yellow-400 hover:underline">{term("Forgot password?")}</a>
               </div>
             )}
 
             {/* Submit Button */}
             <GlowButton type="submit" variant="mango" className="w-full mt-2" disabled={isLoading}>
               {isLoading ? (
-                "Authenticating..."
+                term("Authenticating...")
               ) : mode === "login" ? (
                 <>
-                  Sign In to Platform <ArrowRight className="w-4 h-4" />
+                  {term("Sign In to Platform")} <ArrowRight className="w-4 h-4" />
                 </>
               ) : (
                 <>
-                  Create Account <ShieldCheck className="w-4 h-4" />
+                  {term("Create Account")} <ShieldCheck className="w-4 h-4" />
                 </>
               )}
             </GlowButton>
@@ -317,7 +318,7 @@ export default function LoginPage() {
 
           {/* Footer Note */}
           <div className="mt-6 pt-4 border-t border-white/5 text-center text-[11px] text-gray-500">
-            Protected by MangoDL Neural Security v3.2
+            {term("Protected by MangoDL Neural Security v3.2")}
           </div>
         </GlassCard>
       </div>

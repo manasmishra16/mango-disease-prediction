@@ -22,6 +22,7 @@ import { NeonBadge } from "@/components/ui/neon-badge";
 import { aiRecommendations as defaultRecommendations } from "@/data/mock-data";
 import { getRecommendations, markRecommendationActioned, type RecommendationsResponse } from "@/lib/api-client";
 import type { AIRecommendation } from "@/types";
+import { useLocalizedText } from "@/lib/localization";
 
 const iconMap: Record<string, React.ElementType> = {
   AlertTriangle,
@@ -70,6 +71,7 @@ const colorConfig = {
 const severityOrder = { high: 0, medium: 1, low: 2 };
 
 export default function AIRecommendationsPage() {
+  const { term } = useLocalizedText();
   const [data, setData] = useState<RecommendationsResponse>({
     recommendations: defaultRecommendations,
     stats: {
@@ -115,12 +117,12 @@ export default function AIRecommendationsPage() {
         <StaggerItem>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-white font-display font-bold text-2xl">AI Recommendations</h2>
-              <p className="text-gray-400 text-sm mt-1">Autonomous farmer decision support synthesized from scan, climate & yield data</p>
+              <h2 className="text-white font-display font-bold text-2xl">{term("AI Recommendations")}</h2>
+              <p className="text-gray-400 text-sm mt-1">{term("Autonomous farmer decision support synthesized from scan, climate & yield data")}</p>
             </div>
             <div className="flex items-center gap-2">
-              <NeonBadge label={`${data.stats.alertsGenerated} Active Alerts`} variant="mango" pulse />
-              <NeonBadge label="AI Autonomous" variant="violet" />
+              <NeonBadge label={`${data.stats.alertsGenerated} ${term("6 Active Alerts").replace("6 ", "")}`} variant="mango" pulse />
+              <NeonBadge label={term("AI Autonomous")} variant="violet" />
             </div>
           </div>
         </StaggerItem>
@@ -143,18 +145,18 @@ export default function AIRecommendationsPage() {
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-white font-semibold text-sm">MangoDL AI Engine</span>
-                  <NeonBadge label="Active" variant="neon" pulse size="sm" />
+                  <span className="text-white font-semibold text-sm">{term("MangoDL AI Engine")}</span>
+                  <NeonBadge label={term("Active")} variant="neon" pulse size="sm" />
                 </div>
                 <p className="text-gray-500 text-xs">
-                  Continuously analyzing 247 orchards · Real-time inference sync
+                  {term("Continuously analyzing 247 orchards · Real-time inference sync")}
                 </p>
               </div>
               <div className="hidden md:flex items-center gap-6 text-center">
                 {[
-                  { label: "Processed Today", value: data.stats.processedToday.toLocaleString(), color: "#f59e0b" },
-                  { label: "Alerts Generated", value: data.stats.alertsGenerated, color: "#ef4444" },
-                  { label: "Actions Taken", value: data.stats.actionsTaken, color: "#22c55e" },
+                  { label: term("Processed Today"), value: data.stats.processedToday.toLocaleString(), color: "#f59e0b" },
+                  { label: term("Alerts Generated"), value: data.stats.alertsGenerated, color: "#ef4444" },
+                  { label: term("Actions Taken"), value: data.stats.actionsTaken, color: "#22c55e" },
                 ].map((stat) => (
                   <div key={stat.label}>
                     <div className="text-lg font-bold" style={{ color: stat.color }}>{stat.value}</div>
@@ -181,9 +183,8 @@ export default function AIRecommendationsPage() {
                   initial={{ opacity: 0, y: 24 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 + i * 0.05, duration: 0.4 }}
-                  className={`card-glass p-5 transition-all duration-300 ${cfg.border} relative overflow-hidden group cursor-pointer ${
-                    rec.actioned ? "opacity-60" : ""
-                  }`}
+                  className={`card-glass p-5 transition-all duration-300 ${cfg.border} relative overflow-hidden group cursor-pointer ${rec.actioned ? "opacity-60" : ""
+                    }`}
                   style={{ background: `${cfg.glow.replace("0.1", "0.04")}` }}
                 >
                   {/* Severity indicator */}
@@ -206,42 +207,41 @@ export default function AIRecommendationsPage() {
                         <h3 className="text-white font-semibold text-sm leading-tight">{rec.title}</h3>
                         <div className="flex-shrink-0">
                           <NeonBadge
-                            label={rec.actioned ? "Resolved" : rec.severity.charAt(0).toUpperCase() + rec.severity.slice(1)}
+                            label={rec.actioned ? term("Resolved") : term(rec.severity.charAt(0).toUpperCase() + rec.severity.slice(1))}
                             variant={rec.actioned ? "neon" : rec.severity === "high" ? "red" : rec.severity === "medium" ? "mango" : "neon"}
                             pulse={rec.severity === "high" && !rec.actioned}
                             size="sm"
                           />
                         </div>
                       </div>
-                      <p className="text-gray-400 text-xs leading-relaxed mb-3">{rec.description}</p>
+                      <p className="text-gray-400 text-xs leading-relaxed mb-3">{term(rec.description)}</p>
 
                       {/* Action */}
                       <div className={`flex items-start gap-2 p-2.5 rounded-lg ${cfg.bg} border ${cfg.border}`}>
                         <Sparkles className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${cfg.icon}`} />
-                        <p className="text-xs text-gray-300 leading-relaxed">{rec.action}</p>
+                        <p className="text-xs text-gray-300 leading-relaxed">{term(rec.action)}</p>
                       </div>
 
                       <div className="flex items-center justify-between mt-3">
                         <div className="flex items-center gap-1 text-xs text-gray-600">
                           <Clock className="w-3 h-3" />
-                          <span>Live</span>
+                          <span>{term("Live")}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleActionClick(rec.id)}
-                            className={`text-xs font-medium flex items-center gap-1 px-3 py-1 rounded-lg transition-all ${
-                              rec.actioned
+                            className={`text-xs font-medium flex items-center gap-1 px-3 py-1 rounded-lg transition-all ${rec.actioned
                                 ? "bg-green-500/20 text-green-300"
                                 : `${cfg.icon} hover:underline`
-                            }`}
+                              }`}
                           >
                             {rec.actioned ? (
                               <>
-                                <CheckCircle className="w-3.5 h-3.5 text-green-400" /> Actioned
+                                <CheckCircle className="w-3.5 h-3.5 text-green-400" /> {term("Actioned")}
                               </>
                             ) : (
                               <>
-                                Take Action <ChevronRight className="w-3 h-3" />
+                                {term("Take Action")} <ChevronRight className="w-3 h-3" />
                               </>
                             )}
                           </button>
@@ -260,14 +260,14 @@ export default function AIRecommendationsPage() {
           <GlassCard className="p-5" hover={false}>
             <div className="flex items-center gap-2 mb-4">
               <CheckCircle className="w-5 h-5 text-green-400" />
-              <h3 className="text-white font-semibold">Today&apos;s AI Actions Summary</h3>
+              <h3 className="text-white font-semibold">{term("Today's AI Actions Summary")}</h3>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: "Irrigation Adjusted", value: "3 orchards", color: "#22d3ee" },
-                { label: "Alerts Dispatched", value: "12 farmers", color: "#f59e0b" },
-                { label: "Treatments Suggested", value: "2 orchards", color: "#ef4444" },
-                { label: "Harvest Planned", value: "1 orchard", color: "#22c55e" },
+                { label: term("Irrigation Adjusted"), value: term("3 orchards"), color: "#22d3ee" },
+                { label: term("Alerts Dispatched"), value: term("12 farmers"), color: "#f59e0b" },
+                { label: term("Treatments Suggested"), value: term("2 orchards"), color: "#ef4444" },
+                { label: term("Harvest Planned"), value: term("1 orchard"), color: "#22c55e" },
               ].map((item, i) => (
                 <motion.div
                   key={item.label}

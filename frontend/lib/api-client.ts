@@ -52,7 +52,7 @@ export interface AuthResponse {
   user: AuthUser;
 }
 
-export async function loginApi(email: str, password: str): Promise<AuthResponse> {
+export async function loginApi(email: string, password: string): Promise<AuthResponse> {
   return fetchJson<AuthResponse>("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
@@ -62,7 +62,7 @@ export async function loginApi(email: str, password: str): Promise<AuthResponse>
 export async function registerApi(data: {
   fullName: string;
   email: string;
-  password: str;
+  password: string;
   role?: string;
   organization?: string;
 }): Promise<AuthResponse> {
@@ -293,4 +293,110 @@ export async function saveSettings(settings: UserSettings): Promise<{ success: b
     method: "POST",
     body: JSON.stringify(settings),
   });
+}
+
+// --------------------------------------------
+// AI Agronomist Agent
+// --------------------------------------------
+export interface AgentActionCard {
+  type: "prescription" | "irrigation" | "economics" | "disease_scan";
+  title: string;
+  data: Record<string, any>;
+}
+
+export interface AgentChatMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+  timestamp?: string;
+  action?: AgentActionCard;
+  modelUsed?: string;
+  latencyMs?: number;
+  source?: string;
+  suggestedQuestions?: string[];
+}
+
+export interface AgentChatResponse {
+  response: string;
+  action?: AgentActionCard;
+  source: string;
+  modelUsed: string;
+  latencyMs: number;
+  context: {
+    temp: number;
+    humidity: number;
+    activeAlerts: number;
+  };
+  suggestedQuestions?: string[];
+}
+
+export interface AgentModelInfo {
+  id: string;
+  name: string;
+  provider: string;
+}
+
+export interface AgentModelsResponse {
+  models: AgentModelInfo[];
+  defaultModel: string;
+  hasGeminiKey: boolean;
+  hasGroqKey: boolean;
+  hasOpenAIKey: boolean;
+  hasAnthropicKey: boolean;
+}
+
+export interface AgentPreset {
+  id: string;
+  title: string;
+  prompt: string;
+  category: string;
+  icon: string;
+}
+
+export interface AgentStatusResponse {
+  status: string;
+  agentName: string;
+  version: string;
+  activeModel: string;
+  liveContext: {
+    location: string;
+    ambient_temp: number;
+    ambient_humidity: number;
+    wind_speed: number;
+    weather_condition: string;
+    uv_index: number;
+    rainfall_forecast: string;
+    total_orchards: number;
+    recent_scans: string;
+    active_disease_alerts: number;
+    avg_yield_forecast: string;
+    current_market_price: string;
+    pulp_factory_price: string;
+    recommended_cultivars: string[];
+  };
+  supportedProviders: string[];
+}
+
+export async function sendAgentMessage(params: {
+  message: string;
+  history?: { role: string; content: string }[];
+  model?: string;
+  apiKey?: string;
+  temperature?: number;
+}): Promise<AgentChatResponse> {
+  return fetchJson<AgentChatResponse>("/api/agent/chat", {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+}
+
+export async function getAgentModels(): Promise<AgentModelsResponse> {
+  return fetchJson<AgentModelsResponse>("/api/agent/models");
+}
+
+export async function getAgentPresets(): Promise<{ presets: AgentPreset[] }> {
+  return fetchJson<{ presets: AgentPreset[] }>("/api/agent/presets");
+}
+
+export async function getAgentStatus(): Promise<AgentStatusResponse> {
+  return fetchJson<AgentStatusResponse>("/api/agent/status");
 }
