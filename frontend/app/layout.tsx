@@ -16,21 +16,22 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "MangoDL - AI-Powered Mango Agriculture Intelligence Platform",
+  title: "MangoDL — Deep Learning Approach for Mango Yield and Disease Prediction",
   description:
-    "Transform traditional mango farming with AI-powered disease detection, yield prediction, and climate intelligence. Built for modern farmers.",
+    "Precision agriculture platform using Deep Learning (SE-MangoLeafXNet CNN) and Climate Data (XGBoost + LSTM) for mango disease detection and yield prediction.",
   keywords: [
     "mango agriculture",
+    "deep learning",
+    "SE-MangoLeafXNet",
     "AI disease detection",
     "yield prediction",
     "smart farming",
     "precision agriculture",
-    "deep learning",
-    "crop intelligence",
+    "climate intelligence",
   ],
   openGraph: {
-    title: "MangoDL - AI Agriculture Platform",
-    description: "Futuristic AI-powered mango agriculture intelligence platform",
+    title: "MangoDL — Deep Learning Precision Agriculture Platform",
+    description: "Deep Learning approach for mango yield & pathology prediction using climate intelligence",
     type: "website",
   },
 };

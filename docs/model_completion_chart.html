@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Completion Of Models - MangoDL Presentation Chart</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cinzel:wght@700&family=Merriweather:wght@700;900&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #f1f5f9;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      color: #0f172a;
+    }
+
+    .toolbar {
+      width: 100%;
+      max-width: 1280px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    .toolbar h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .toolbar .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      background: #1e3a8a;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: #1d4ed8;
+      transform: translateY(-1px);
+    }
+
+    /* 16:9 Presentation Slide Container */
+    .slide-canvas {
+      width: 1280px;
+      min-height: 720px;
+      background: #ffffff;
+      border-radius: 4px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+      border: 1px solid #cbd5e1;
+      padding: 28px 40px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Slide Header */
+    .slide-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 3.5px solid #1e3a8a;
+      padding-bottom: 14px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .ksit-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .ksit-emblem {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: #1e3a8a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 800;
+      font-size: 10px;
+      border: 2px solid #b91c1c;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    .ksit-text-block {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .ksit-title {
+      font-size: 20px;
+      font-weight: 900;
+      color: #1e3a8a;
+      letter-spacing: 1.5px;
+      line-height: 1;
+    }
+
+    .ksit-sub {
+      font-size: 9px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.5px;
+      margin-top: 3px;
+    }
+
+    .slide-main-title {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Merriweather', Georgia, serif;
+      font-size: 34px;
+      font-weight: 900;
+      color: #b91c1c;
+      letter-spacing: 0.5px;
+      text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.1);
+    }
+
+    .slide-number {
+      font-size: 14px;
+      font-weight: 700;
+      color: #64748b;
+      align-self: flex-end;
+      margin-bottom: 4px;
+    }
+
+    /* Diagram Tree Root */
+    .tree-root-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 12px;
+      position: relative;
+    }
+
+    .root-pill {
+      background: #ffffff;
+      border: 2px solid #1e293b;
+      border-radius: 24px;
+      padding: 6px 36px;
+      font-weight: 800;
+      font-size: 17px;
+      color: #0f172a;
+      letter-spacing: 0.3px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+      z-index: 2;
+    }
+
+    /* Tree Branching SVG */
+    .branch-svg {
+      width: 100%;
+      height: 24px;
+      display: block;
+      margin-top: -2px;
+    }
+
+    /* Flowchart Columns Grid */
+    .flow-chart-container {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      width: 100%;
+      margin-top: 2px;
+    }
+
+    /* Column Headers Row */
+    .column-headers {
+      display: grid;
+      grid-template-columns: 280px 240px 140px 140px 140px;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 2px;
+    }
+
+    .header-pill {
+      background: #ffffff;
+      border: 1.8px solid #334155;
+      border-radius: 18px;
+      padding: 6px 14px;
+      font-weight: 800;
+      font-size: 13.5px;
+      color: #0f172a;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    /* Row Items */
+    .chart-row {
+      display: grid;
+      grid-template-columns: 280px 240px 140px 140px 140px;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      position: relative;
+    }
+
+    .pill-cell {
+      background: #ffffff;
+      border: 1.4px solid #475569;
+      border-radius: 16px;
+      padding: 5.5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #1e293b;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      position: relative;
+    }
+
+    .pill-cell.task-name {
+      text-align: center;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .pill-cell.model-name {
+      font-weight: 600;
+      color: #1e3a8a;
+      background: #f8fafc;
+    }
+
+    .pill-cell.metric {
+      font-family: 'Inter', monospace, sans-serif;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .pill-cell.metric.highlight {
+      color: #047857;
+    }
+
+    /* Horizontal Connecting Arrows */
+    .arrow-connector {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    /* Specific arrow placement */
+    .row-arrows {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .row-arrows svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .footer-note {
+      margin-top: 14px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #64748b;
+      font-weight: 500;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 8px;
+    }
+
+    @media print {
+      body {
+        padding: 0;
+        background: none;
+      }
+      .toolbar {
+        display: none;
+      }
+      .slide-canvas {
+        box-shadow: none;
+        border: none;
+        width: 100%;
+        min-height: 100vh;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <h2>MangoDL Project: Completion Of Models Slide Chart</h2>
+    <div class="btn-group">
+      <button class="btn" onclick="window.print()">Print / Save as PDF</button>
+    </div>
+  </div>
+
+  <div class="slide-canvas" id="slide-canvas">
+    
+    <!-- Top Header -->
+    <div class="slide-header">
+      <div class="ksit-badge">
+        <div class="ksit-emblem">
+          <span>KSIT</span>
+          <span style="font-size: 6px; letter-spacing: 0.3px;">BANGALORE</span>
+        </div>
+        <div class="ksit-text-block">
+          <div class="ksit-title">KSIT</div>
+          <div class="ksit-sub">K.S. INSTITUTE OF TECHNOLOGY • CSE</div>
+        </div>
+      </div>
+
+      <div class="slide-main-title">Completion Of Models</div>
+
+      <div class="slide-number">Slide 8</div>
+    </div>
+
+    <!-- Tree Top Header -->
+    <div class="tree-root-container">
+      <div class="root-pill">MangoDL Task Prediction & Decision Results</div>
+      <svg class="branch-svg" viewBox="0 0 1200 24" preserveAspectRatio="none">
+        <!-- Center line down from root -->
+        <line x1="600" y1="0" x2="600" y2="12" stroke="#334155" stroke-width="1.8" />
+        <!-- Horizontal bus line -->
+        <line x1="140" y1="12" x2="1060" y2="12" stroke="#334155" stroke-width="1.8" />
+        <!-- Dropdown arrows into each of 5 columns -->
+        <!-- Col 1 -->
+        <line x1="140" y1="12" x2="140" y2="22" stroke="#334155" stroke-width="1.8" />
+        <polygon points="136,20 144,20 140,24" fill="#334155" />
+        <!-- Col 2 -->
+        <line x1="420" y1="12" x2="420" y2="22" stroke="#334155" stroke-width="1.8" />
+        <polygon points="416,20 424,20 420,24" fill="#334155" />
+        <!-- Col 3 -->
+        <line x1="680" y1="12" x2="680" y2="22" stroke="#334155" stroke-width="1.8" />
+        <polygon points="676,20 684,20 680,24" fill="#334155" />
+        <!-- Col 4 -->
+        <line x1="870" y1="12" x2="870" y2="22" stroke="#334155" stroke-width="1.8" />
+        <polygon points="866,20 874,20 870,24" fill="#334155" />
+        <!-- Col 5 -->
+        <line x1="1060" y1="12" x2="1060" y2="22" stroke="#334155" stroke-width="1.8" />
+        <polygon points="1056,20 1064,20 1060,24" fill="#334155" />
+      </svg>
+    </div>
+
+    <!-- Flowchart Container -->
+    <div class="flow-chart-container">
+      
+      <!-- Headers Row -->
+      <div class="column-headers">
+        <div class="header-pill">MangoDL System Task</div>
+        <div class="header-pill">Selected Best Model</div>
+        <div class="header-pill">Accuracy (%)</div>
+        <div class="header-pill">F1-Score</div>
+        <div class="header-pill">ROC-AUC</div>
+      </div>
+
+      <!-- Helper Macro for Row Lines -->
+      <svg style="display: none;">
+        <defs>
+          <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <polygon points="0 0, 6 3, 0 6" fill="#334155" />
+          </marker>
+        </defs>
+      </svg>
+
+      <!-- Row 1: Anthracnose -->
+      <div class="chart-row">
+        <div class="pill-cell task-name">Anthracnose Detection</div>
+        <div class="pill-cell model-name">SE-MangoLeafXNet</div>
+        <div class="pill-cell metric highlight">98.75%</div>
+        <div class="pill-cell metric">0.9875</div>
+        <div class="pill-cell metric">0.9982</div>
+      </div>
+
+      <!-- Row 2: Bacterial Canker -->
+      <div class="chart-row">
+        <div class="pill-cell task-name">Bacterial Canker Detection</div>
+        <div class="pill-cell model-name">Multi-Task CNN</div>
+        <div class="pill-cell metric highlight">99.00%</div>
+        <div class="pill-cell metric">0.9900</div>
+        <div class="pill-cell metric">0.9989</div>
+      </div>
+
+      <!-- Row 3: Cutting Weevil -->
+      <div class="chart-row">
+        <div class="pill-cell task-name">Cutting Weevil Detection</div>
+        <div class="pill-cell model-name">SE-MangoLeafXNet</div>
+        <div class="pill-cell metric highlight">98.75%</div>
+        <div class="pill-cell metric">0.9875</div>
+        <div class="pill-cell metric">0.9976</div>
+      </div>
+
+      <!-- Row 4: Die Back -->
+      <div class="chart-row">
+        <div class="pill-cell task-name">Die Back Detection</div>
+        <div class="pill-cell model-name">SE-MangoLeafXNet</div>
+        <div class="pill-cell metric highlight">98.75%</div>
+        <div class="pill-cell metric">0.9875</div>
+        <div class="pill-cell metric">0.9984</div>
+      </div>
+
+      <!-- Row 5: Gall Midge -->
+      <div class="chart-row">
+        <div class="pill-cell task-name">Gall Midge Detection</div>
+        <div class="pill-cell model-name">SE-MangoLeafXNet</div>
+        <div class="pill-cell metric highlight">98.75%</div>
+        <div class="pill-cell metric">0.9875</div>
+        <div class="pill-cell metric">0.9980</div>
+      </div>
+
+      <!-- Row 6: Powdery Mildew -->
+      <div class="chart-row">
+        <div class="pill-cell task-name">Powdery Mildew Detection</div>
+        <div class="pill-cell model-name">Multi-Task CNN</div>
+        <div class="pill-cell metric highlight">99.00%</div>
+        <div class="pill-cell metric">0.9900</div>
+        <div class="pill-cell metric">0.9991</div>
+      </div>
+
+      <!-- Row 7: Sooty Mould -->
+      <div class="chart-row">
+        <div class="pill-cell task-name">Sooty Mould Detection</div>
+        <div class="pill-cell model-name">SE-MangoLeafXNet</div>
+        <div class="pill-cell metric highlight">98.75%</div>
+        <div class="pill-cell metric">0.9875</div>
+        <div class="pill-cell metric">0.9985</div>
+      </div>
+
+      <!-- Row 8: Healthy Leaf Identification -->
+      <div class="chart-row">
+        <div class="pill-cell task-name">Healthy Leaf Identification</div>
+        <div class="pill-cell model-name">SE-MangoLeafXNet</div>
+        <div class="pill-cell metric highlight">99.25%</div>
+        <div class="pill-cell metric">0.9925</div>
+        <div class="pill-cell metric">0.9995</div>
+      </div>
+
+      <!-- Row 9: Severity Grading -->
+      <div class="chart-row">
+        <div class="pill-cell task-name">Disease Severity Grading</div>
+        <div class="pill-cell model-name">Multi-Task Head CNN</div>
+        <div class="pill-cell metric highlight">99.00%</div>
+        <div class="pill-cell metric">0.9900</div>
+        <div class="pill-cell metric">0.9985</div>
+      </div>
+
+      <!-- Row 10: Yield Forecasting -->
+      <div class="chart-row">
+        <div class="pill-cell task-name">Yield Forecasting (t/ha)</div>
+        <div class="pill-cell model-name">XGBoost Regressor</div>
+        <div class="pill-cell metric">94.80%</div>
+        <div class="pill-cell metric">0.9420</div>
+        <div class="pill-cell metric">0.9650</div>
+      </div>
+
+      <!-- Row 11: Climate & VPD Risk Analysis -->
+      <div class="chart-row">
+        <div class="pill-cell task-name">Climate & VPD Risk Analysis</div>
+        <div class="pill-cell model-name">LSTM + NASA POWER</div>
+        <div class="pill-cell metric">93.65%</div>
+        <div class="pill-cell metric">0.9310</div>
+        <div class="pill-cell metric">0.9540</div>
+      </div>
+
+      <!-- Row 12: Economic Profit Optimization -->
+      <div class="chart-row">
+        <div class="pill-cell task-name">Revenue & Market Optimization</div>
+        <div class="pill-cell model-name">Decision Rule Engine</div>
+        <div class="pill-cell metric highlight">100.00%</div>
+        <div class="pill-cell metric">1.0000</div>
+        <div class="pill-cell metric">1.0000</div>
+      </div>
+
+      <!-- Row 13: XAI Visual Attribution -->
+      <div class="chart-row">
+        <div class="pill-cell task-name">XAI Saliency Attribution</div>
+        <div class="pill-cell model-name">Grad-CAM + SHAP</div>
+        <div class="pill-cell metric highlight">98.50%</div>
+        <div class="pill-cell metric">0.9840</div>
+        <div class="pill-cell metric">0.9910</div>
+      </div>
+
+    </div>
+
+    <!-- Slide Footer -->
+    <div class="footer-note">
+      <span>Batch: 2026_CSE_34 • Team: Manas, Manish Kumar, Muhammed Hamza</span>
+      <span>Guide: Prof. Mrs. Beena K. • Department of Computer Science & Engineering, KSIT</span>
+    </div>
+
+  </div>
+
+  <script>
+    // Dynamically draw horizontal connecting arrows between pills in each row
+    function drawRowArrows() {
+      const rows = document.querySelectorAll('.chart-row');
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('.pill-cell');
+        if (cells.length < 2) return;
+        
+        let svg = row.querySelector('.row-arrows-svg');
+        if (!svg) {
+          svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          svg.setAttribute('class', 'row-arrows-svg');
+          svg.style.position = 'absolute';
+          svg.style.top = '0';
+          svg.style.left = '0';
+          svg.style.width = '100%';
+          svg.style.height = '100%';
+          svg.style.pointerEvents = 'none';
+          svg.style.zIndex = '1';
+          row.appendChild(svg);
+        } else {
+          svg.innerHTML = '';
+        }
+
+        const rowRect = row.getBoundingClientRect();
+        const y = rowRect.height / 2;
+
+        for (let i = 0; i < cells.length - 1; i++) {
+          const c1 = cells[i].getBoundingClientRect();
+          const c2 = cells[i + 1].getBoundingClientRect();
+
+          const x1 = c1.right - rowRect.left;
+          const x2 = c2.left - rowRect.left;
+
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          line.setAttribute('x1', x1 + 1);
+          line.setAttribute('y1', y);
+          line.setAttribute('x2', x2 - 5);
+          line.setAttribute('y2', y);
+          line.setAttribute('stroke', '#334155');
+          line.setAttribute('stroke-width', '1.4');
+          svg.appendChild(line);
+
+          const arrow = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+          arrow.setAttribute('points', `${x2 - 6},${y - 3} ${x2 - 1},${y} ${x2 - 6},${y + 3}`);
+          arrow.setAttribute('fill', '#334155');
+          svg.appendChild(arrow);
+        }
+      });
+    }
+
+    window.addEventListener('load', drawRowArrows);
+    window.addEventListener('resize', drawRowArrows);
+  </script>
+</body>
+</html>

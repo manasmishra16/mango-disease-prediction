@@ -1,0 +1,377 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="100%" height="100%">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Merriweather:wght@700;900&amp;display=swap');
+      .title-text { font-family: 'Merriweather', Georgia, serif; font-weight: 900; font-size: 32px; fill: #b91c1c; }
+      .ksit-bold { font-family: 'Inter', sans-serif; font-weight: 900; font-size: 19px; fill: #1e3a8a; letter-spacing: 1px; }
+      .ksit-sub { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 8.5px; fill: #64748b; }
+      .slide-num { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 13px; fill: #64748b; }
+      .root-title { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 15px; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; }
+      .header-text { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 13px; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; }
+      .task-text { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 11.5px; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; }
+      .model-text { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 11.5px; fill: #1e3a8a; text-anchor: middle; dominant-baseline: middle; }
+      .metric-text { font-family: 'Inter', monospace, sans-serif; font-weight: 700; font-size: 11.5px; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; }
+      .footer-text { font-family: 'Inter', sans-serif; font-weight: 500; font-size: 10px; fill: #64748b; }
+      
+      .pill { fill: #ffffff; stroke: #334155; stroke-width: 1.4; rx: 12; }
+      .pill-header { fill: #ffffff; stroke: #1e293b; stroke-width: 1.8; rx: 14; }
+      .pill-root { fill: #ffffff; stroke: #1e293b; stroke-width: 2.0; rx: 18; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.08)); }
+      .conn-line { stroke: #334155; stroke-width: 1.3; }
+    </style>
+    
+    <marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+      <polygon points="0 0, 6 3, 0 6" fill="#334155" />
+    </marker>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="1280" height="720" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+
+  <!-- Top Banner Line -->
+  <rect x="40" y="76" width="1200" height="3.5" fill="#1e3a8a" />
+
+  <!-- Top Left KSIT Emblem -->
+  <g transform="translate(45, 16)">
+    <circle cx="24" cy="24" r="23" fill="#1e3a8a" stroke="#b91c1c" stroke-width="2" />
+    <text x="24" y="21" font-family="'Inter', sans-serif" font-weight="900" font-size="10" fill="#ffffff" text-anchor="middle">KSIT</text>
+    <text x="24" y="32" font-family="'Inter', sans-serif" font-weight="700" font-size="6" fill="#ffffff" text-anchor="middle">BANGALORE</text>
+    
+    <text x="56" y="24" class="ksit-bold">KSIT</text>
+    <text x="56" y="37" class="ksit-sub">K.S. INSTITUTE OF TECHNOLOGY • CSE</text>
+  </g>
+
+  <!-- Slide Title -->
+  <text x="640" y="52" class="title-text" text-anchor="middle">Completion Of Models</text>
+  <text x="1235" y="68" class="slide-num" text-anchor="end">Slide 8</text>
+
+  <!-- Root Top Header Box -->
+  <g transform="translate(420, 92)">
+    <rect width="440" height="34" class="pill-root" />
+    <text x="220" y="18" class="root-title">MangoDL Task Prediction &amp; System Results</text>
+  </g>
+
+  <!-- Top Tree Branching Lines -->
+  <line x1="640" y1="126" x2="640" y2="138" stroke="#334155" stroke-width="1.6" />
+  <line x1="170" y1="138" x2="1140" y2="138" stroke="#334155" stroke-width="1.6" />
+  
+  <!-- Column Top Down Arrows -->
+  <line x1="170" y1="138" x2="170" y2="149" stroke="#334155" stroke-width="1.6" marker-end="url(#arr)" />
+  <line x1="450" y1="138" x2="450" y2="149" stroke="#334155" stroke-width="1.6" marker-end="url(#arr)" />
+  <line x1="715" y1="138" x2="715" y2="149" stroke="#334155" stroke-width="1.6" marker-end="url(#arr)" />
+  <line x1="925" y1="138" x2="925" y2="149" stroke="#334155" stroke-width="1.6" marker-end="url(#arr)" />
+  <line x1="1140" y1="138" x2="1140" y2="149" stroke="#334155" stroke-width="1.6" marker-end="url(#arr)" />
+
+  <!-- Column Header Pills -->
+  <!-- Col 1: Task (x=45, w=250) -->
+  <rect x="45" y="152" width="250" height="30" class="pill-header" />
+  <text x="170" y="168" class="header-text">MangoDL Task</text>
+
+  <!-- Col 2: Selected Model (x=330, w=240) -->
+  <rect x="330" y="152" width="240" height="30" class="pill-header" />
+  <text x="450" y="168" class="header-text">Selected Best Model</text>
+
+  <!-- Col 3: Accuracy (x=635, w=160) -->
+  <rect x="635" y="152" width="160" height="30" class="pill-header" />
+  <text x="715" y="168" class="header-text">Accuracy (%)</text>
+
+  <!-- Col 4: F1-Score (x=845, w=160) -->
+  <rect x="845" y="152" width="160" height="30" class="pill-header" />
+  <text x="925" y="168" class="header-text">F1-Score</text>
+
+  <!-- Col 5: ROC-AUC (x=1055, w=170) -->
+  <rect x="1055" y="152" width="170" height="30" class="pill-header" />
+  <text x="1140" y="168" class="header-text">ROC-AUC</text>
+
+  <!-- ==================== ROWS ==================== -->
+  
+  <!-- Row 1: Anthracnose (y=194) -->
+  <g transform="translate(0, 194)">
+    <rect x="45" y="0" width="250" height="26" class="pill" />
+    <text x="170" y="14" class="task-text">Anthracnose Detection</text>
+    <line x1="295" y1="13" x2="326" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="330" y="0" width="240" height="26" class="pill" fill="#f8fafc" />
+    <text x="450" y="14" class="model-text">SE-MangoLeafXNet</text>
+    <line x1="570" y1="13" x2="631" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="635" y="0" width="160" height="26" class="pill" />
+    <text x="715" y="14" class="metric-text">98.75%</text>
+    <line x1="795" y1="13" x2="841" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="845" y="0" width="160" height="26" class="pill" />
+    <text x="925" y="14" class="metric-text">0.9875</text>
+    <line x1="1005" y1="13" x2="1051" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="1055" y="0" width="170" height="26" class="pill" />
+    <text x="1140" y="14" class="metric-text">0.9982</text>
+  </g>
+
+  <!-- Row 2: Bacterial Canker (y=228) -->
+  <g transform="translate(0, 228)">
+    <rect x="45" y="0" width="250" height="26" class="pill" />
+    <text x="170" y="14" class="task-text">Bacterial Canker Detection</text>
+    <line x1="295" y1="13" x2="326" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="330" y="0" width="240" height="26" class="pill" fill="#f8fafc" />
+    <text x="450" y="14" class="model-text">Multi-Task CNN</text>
+    <line x1="570" y1="13" x2="631" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="635" y="0" width="160" height="26" class="pill" />
+    <text x="715" y="14" class="metric-text">99.00%</text>
+    <line x1="795" y1="13" x2="841" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="845" y="0" width="160" height="26" class="pill" />
+    <text x="925" y="14" class="metric-text">0.9900</text>
+    <line x1="1005" y1="13" x2="1051" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="1055" y="0" width="170" height="26" class="pill" />
+    <text x="1140" y="14" class="metric-text">0.9989</text>
+  </g>
+
+  <!-- Row 3: Cutting Weevil (y=262) -->
+  <g transform="translate(0, 262)">
+    <rect x="45" y="0" width="250" height="26" class="pill" />
+    <text x="170" y="14" class="task-text">Cutting Weevil Detection</text>
+    <line x1="295" y1="13" x2="326" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="330" y="0" width="240" height="26" class="pill" fill="#f8fafc" />
+    <text x="450" y="14" class="model-text">SE-MangoLeafXNet</text>
+    <line x1="570" y1="13" x2="631" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="635" y="0" width="160" height="26" class="pill" />
+    <text x="715" y="14" class="metric-text">98.75%</text>
+    <line x1="795" y1="13" x2="841" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="845" y="0" width="160" height="26" class="pill" />
+    <text x="925" y="14" class="metric-text">0.9875</text>
+    <line x1="1005" y1="13" x2="1051" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="1055" y="0" width="170" height="26" class="pill" />
+    <text x="1140" y="14" class="metric-text">0.9976</text>
+  </g>
+
+  <!-- Row 4: Die Back (y=296) -->
+  <g transform="translate(0, 296)">
+    <rect x="45" y="0" width="250" height="26" class="pill" />
+    <text x="170" y="14" class="task-text">Die Back Detection</text>
+    <line x1="295" y1="13" x2="326" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="330" y="0" width="240" height="26" class="pill" fill="#f8fafc" />
+    <text x="450" y="14" class="model-text">SE-MangoLeafXNet</text>
+    <line x1="570" y1="13" x2="631" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="635" y="0" width="160" height="26" class="pill" />
+    <text x="715" y="14" class="metric-text">98.75%</text>
+    <line x1="795" y1="13" x2="841" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="845" y="0" width="160" height="26" class="pill" />
+    <text x="925" y="14" class="metric-text">0.9875</text>
+    <line x1="1005" y1="13" x2="1051" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="1055" y="0" width="170" height="26" class="pill" />
+    <text x="1140" y="14" class="metric-text">0.9984</text>
+  </g>
+
+  <!-- Row 5: Gall Midge (y=330) -->
+  <g transform="translate(0, 330)">
+    <rect x="45" y="0" width="250" height="26" class="pill" />
+    <text x="170" y="14" class="task-text">Gall Midge Detection</text>
+    <line x1="295" y1="13" x2="326" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="330" y="0" width="240" height="26" class="pill" fill="#f8fafc" />
+    <text x="450" y="14" class="model-text">SE-MangoLeafXNet</text>
+    <line x1="570" y1="13" x2="631" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="635" y="0" width="160" height="26" class="pill" />
+    <text x="715" y="14" class="metric-text">98.75%</text>
+    <line x1="795" y1="13" x2="841" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="845" y="0" width="160" height="26" class="pill" />
+    <text x="925" y="14" class="metric-text">0.9875</text>
+    <line x1="1005" y1="13" x2="1051" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="1055" y="0" width="170" height="26" class="pill" />
+    <text x="1140" y="14" class="metric-text">0.9980</text>
+  </g>
+
+  <!-- Row 6: Powdery Mildew (y=364) -->
+  <g transform="translate(0, 364)">
+    <rect x="45" y="0" width="250" height="26" class="pill" />
+    <text x="170" y="14" class="task-text">Powdery Mildew Detection</text>
+    <line x1="295" y1="13" x2="326" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="330" y="0" width="240" height="26" class="pill" fill="#f8fafc" />
+    <text x="450" y="14" class="model-text">Multi-Task CNN</text>
+    <line x1="570" y1="13" x2="631" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="635" y="0" width="160" height="26" class="pill" />
+    <text x="715" y="14" class="metric-text">99.00%</text>
+    <line x1="795" y1="13" x2="841" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="845" y="0" width="160" height="26" class="pill" />
+    <text x="925" y="14" class="metric-text">0.9900</text>
+    <line x1="1005" y1="13" x2="1051" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="1055" y="0" width="170" height="26" class="pill" />
+    <text x="1140" y="14" class="metric-text">0.9991</text>
+  </g>
+
+  <!-- Row 7: Sooty Mould (y=398) -->
+  <g transform="translate(0, 398)">
+    <rect x="45" y="0" width="250" height="26" class="pill" />
+    <text x="170" y="14" class="task-text">Sooty Mould Detection</text>
+    <line x1="295" y1="13" x2="326" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="330" y="0" width="240" height="26" class="pill" fill="#f8fafc" />
+    <text x="450" y="14" class="model-text">SE-MangoLeafXNet</text>
+    <line x1="570" y1="13" x2="631" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="635" y="0" width="160" height="26" class="pill" />
+    <text x="715" y="14" class="metric-text">98.75%</text>
+    <line x1="795" y1="13" x2="841" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="845" y="0" width="160" height="26" class="pill" />
+    <text x="925" y="14" class="metric-text">0.9875</text>
+    <line x1="1005" y1="13" x2="1051" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="1055" y="0" width="170" height="26" class="pill" />
+    <text x="1140" y="14" class="metric-text">0.9985</text>
+  </g>
+
+  <!-- Row 8: Healthy Leaf (y=432) -->
+  <g transform="translate(0, 432)">
+    <rect x="45" y="0" width="250" height="26" class="pill" />
+    <text x="170" y="14" class="task-text">Healthy Leaf Identification</text>
+    <line x1="295" y1="13" x2="326" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="330" y="0" width="240" height="26" class="pill" fill="#f8fafc" />
+    <text x="450" y="14" class="model-text">SE-MangoLeafXNet</text>
+    <line x1="570" y1="13" x2="631" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="635" y="0" width="160" height="26" class="pill" />
+    <text x="715" y="14" class="metric-text">99.25%</text>
+    <line x1="795" y1="13" x2="841" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="845" y="0" width="160" height="26" class="pill" />
+    <text x="925" y="14" class="metric-text">0.9925</text>
+    <line x1="1005" y1="13" x2="1051" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="1055" y="0" width="170" height="26" class="pill" />
+    <text x="1140" y="14" class="metric-text">0.9995</text>
+  </g>
+
+  <!-- Row 9: Severity Grading (y=466) -->
+  <g transform="translate(0, 466)">
+    <rect x="45" y="0" width="250" height="26" class="pill" />
+    <text x="170" y="14" class="task-text">Disease Severity Grading</text>
+    <line x1="295" y1="13" x2="326" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="330" y="0" width="240" height="26" class="pill" fill="#f8fafc" />
+    <text x="450" y="14" class="model-text">Multi-Task Head CNN</text>
+    <line x1="570" y1="13" x2="631" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="635" y="0" width="160" height="26" class="pill" />
+    <text x="715" y="14" class="metric-text">99.00%</text>
+    <line x1="795" y1="13" x2="841" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="845" y="0" width="160" height="26" class="pill" />
+    <text x="925" y="14" class="metric-text">0.9900</text>
+    <line x1="1005" y1="13" x2="1051" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="1055" y="0" width="170" height="26" class="pill" />
+    <text x="1140" y="14" class="metric-text">0.9985</text>
+  </g>
+
+  <!-- Row 10: Yield Forecasting (y=500) -->
+  <g transform="translate(0, 500)">
+    <rect x="45" y="0" width="250" height="26" class="pill" />
+    <text x="170" y="14" class="task-text">Yield Forecasting (t/ha)</text>
+    <line x1="295" y1="13" x2="326" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="330" y="0" width="240" height="26" class="pill" fill="#f8fafc" />
+    <text x="450" y="14" class="model-text">XGBoost Regressor</text>
+    <line x1="570" y1="13" x2="631" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="635" y="0" width="160" height="26" class="pill" />
+    <text x="715" y="14" class="metric-text">94.80%</text>
+    <line x1="795" y1="13" x2="841" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="845" y="0" width="160" height="26" class="pill" />
+    <text x="925" y="14" class="metric-text">0.9420</text>
+    <line x1="1005" y1="13" x2="1051" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="1055" y="0" width="170" height="26" class="pill" />
+    <text x="1140" y="14" class="metric-text">0.9650</text>
+  </g>
+
+  <!-- Row 11: Climate & VPD Risk Analysis (y=534) -->
+  <g transform="translate(0, 534)">
+    <rect x="45" y="0" width="250" height="26" class="pill" />
+    <text x="170" y="14" class="task-text">Climate &amp; VPD Risk Analysis</text>
+    <line x1="295" y1="13" x2="326" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="330" y="0" width="240" height="26" class="pill" fill="#f8fafc" />
+    <text x="450" y="14" class="model-text">LSTM + NASA POWER</text>
+    <line x1="570" y1="13" x2="631" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="635" y="0" width="160" height="26" class="pill" />
+    <text x="715" y="14" class="metric-text">93.65%</text>
+    <line x1="795" y1="13" x2="841" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="845" y="0" width="160" height="26" class="pill" />
+    <text x="925" y="14" class="metric-text">0.9310</text>
+    <line x1="1005" y1="13" x2="1051" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="1055" y="0" width="170" height="26" class="pill" />
+    <text x="1140" y="14" class="metric-text">0.9540</text>
+  </g>
+
+  <!-- Row 12: Economic Profit Optimization (y=568) -->
+  <g transform="translate(0, 568)">
+    <rect x="45" y="0" width="250" height="26" class="pill" />
+    <text x="170" y="14" class="task-text">Revenue &amp; Market Optimization</text>
+    <line x1="295" y1="13" x2="326" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="330" y="0" width="240" height="26" class="pill" fill="#f8fafc" />
+    <text x="450" y="14" class="model-text">Decision Rule Engine</text>
+    <line x1="570" y1="13" x2="631" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="635" y="0" width="160" height="26" class="pill" />
+    <text x="715" y="14" class="metric-text">100.00%</text>
+    <line x1="795" y1="13" x2="841" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="845" y="0" width="160" height="26" class="pill" />
+    <text x="925" y="14" class="metric-text">1.0000</text>
+    <line x1="1005" y1="13" x2="1051" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="1055" y="0" width="170" height="26" class="pill" />
+    <text x="1140" y="14" class="metric-text">1.0000</text>
+  </g>
+
+  <!-- Row 13: XAI Saliency Attribution (y=602) -->
+  <g transform="translate(0, 602)">
+    <rect x="45" y="0" width="250" height="26" class="pill" />
+    <text x="170" y="14" class="task-text">XAI Saliency Attribution</text>
+    <line x1="295" y1="13" x2="326" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="330" y="0" width="240" height="26" class="pill" fill="#f8fafc" />
+    <text x="450" y="14" class="model-text">Grad-CAM + SHAP</text>
+    <line x1="570" y1="13" x2="631" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="635" y="0" width="160" height="26" class="pill" />
+    <text x="715" y="14" class="metric-text">98.50%</text>
+    <line x1="795" y1="13" x2="841" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="845" y="0" width="160" height="26" class="pill" />
+    <text x="925" y="14" class="metric-text">0.9840</text>
+    <line x1="1005" y1="13" x2="1051" y2="13" class="conn-line" marker-end="url(#arr)" />
+
+    <rect x="1055" y="0" width="170" height="26" class="pill" />
+    <text x="1140" y="14" class="metric-text">0.9910</text>
+  </g>
+
+  <!-- Slide Footer Line & Text -->
+  <line x1="40" y1="655" x2="1240" y2="655" stroke="#e2e8f0" stroke-width="1.2" />
+  <text x="45" y="675" class="footer-text">Project: BCS685 Phase I/II — KSIT, Dept. of CSE, Batch 2026_CSE_34 • Team: Manas, Manish Kumar, Muhammed Hamza</text>
+  <text x="1235" y="675" class="footer-text" text-anchor="end">Guide: Prof. Mrs. Beena K. • MangoDL Research Platform</text>
+</svg>

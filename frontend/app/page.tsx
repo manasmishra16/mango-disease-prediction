@@ -155,7 +155,7 @@ export default function LandingPage() {
         <div className="max-w-3xl">
           <div className="mb-6 flex flex-wrap items-center gap-2">
             <NeonBadge label={term("Powered by Deep Learning")} variant="mango" pulse />
-            <NeonBadge label={term("ResNet-50 + XGBoost")} variant="violet" />
+            <NeonBadge label={term("SE-MangoLeafXNet + XGBoost")} variant="violet" />
           </div>
 
           <motion.h1
@@ -163,11 +163,11 @@ export default function LandingPage() {
             animate={{ opacity: 1, y: 0 }}
             className="font-display text-4xl font-bold leading-tight text-[var(--text-primary)] md:text-6xl"
           >
-            <span className="gradient-text-hero">{term("AI-Powered Mango")}</span>
+            <span className="gradient-text-hero">{term("Deep Learning Approach for")}</span>
             <br />
-            <span>{term("Disease Detection &")}</span>
+            <span>{term("Mango Disease Detection &")}</span>
             <br />
-            <span className="gradient-text-mango">{term("Yield Prediction")}</span>
+            <span className="gradient-text-mango">{term("Yield Prediction Platform")}</span>
           </motion.h1>
 
           <motion.p

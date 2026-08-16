@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { GlassCard } from "@/components/ui/glass-card";
 import { climateMonthlyData } from "@/data/mock-data";
@@ -41,7 +42,13 @@ function CustomTooltip({
   );
 }
 
-export function ClimateChart() {
+interface ClimateChartProps {
+  location?: string;
+  currentTemp?: number;
+  currentHumidity?: number;
+}
+
+export function ClimateChart({ location = "Hassan, Karnataka", currentTemp, currentHumidity }: ClimateChartProps) {
   const { term } = useLocalizedText();
   const legend = [
     { color: "#f59e0b", label: term("Temp °C") },
@@ -49,12 +56,49 @@ export function ClimateChart() {
     { color: "#8b5cf6", label: term("Humidity %") },
   ];
 
+  // Adjust annual baseline dynamically based on geographic zone of Karnataka
+  const chartData = useMemo(() => {
+    const locLower = location.toLowerCase();
+    let tempDelta = 0;
+    let rainMultiplier = 1.0;
+    let humDelta = 0;
+
+    if (locLower.includes("mangaluru") || locLower.includes("udupi") || locLower.includes("karwar") || locLower.includes("dakshina") || locLower.includes("uttara")) {
+      // Coastal: High rainfall & humidity
+      tempDelta = -1;
+      rainMultiplier = 1.8;
+      humDelta = 10;
+    } else if (locLower.includes("kalaburagi") || locLower.includes("bidar") || locLower.includes("raichur") || locLower.includes("bijapur") || locLower.includes("bagalkote") || locLower.includes("bellary")) {
+      // North Dry: High heat, lower rainfall
+      tempDelta = 4;
+      rainMultiplier = 0.65;
+      humDelta = -12;
+    } else if (locLower.includes("madikeri") || locLower.includes("kodagu") || locLower.includes("chikkamagaluru") || locLower.includes("shivamogga")) {
+      // Western Ghats Malnad: Cooler, very high monsoon rain
+      tempDelta = -3;
+      rainMultiplier = 2.2;
+      humDelta = 8;
+    } else if (locLower.includes("kolar") || locLower.includes("chikkaballapur") || locLower.includes("ramanagara") || locLower.includes("tumkur")) {
+      // South Mango Belt: Moderate temps, optimal flowering climate
+      tempDelta = 1;
+      rainMultiplier = 0.9;
+      humDelta = -2;
+    }
+
+    return climateMonthlyData.map((d) => ({
+      month: term(d.month),
+      temp: Math.round(d.temp + tempDelta),
+      rainfall: Math.round(d.rainfall * rainMultiplier),
+      humidity: Math.min(98, Math.max(40, Math.round(d.humidity + humDelta))),
+    }));
+  }, [location, term]);
+
   return (
     <GlassCard className="p-5" delay={0.45} hover={false}>
-      <div className="mb-5 flex items-center justify-between">
+      <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h3 className="font-semibold text-white">{term("Climate Analytics")}</h3>
-          <p className="mt-0.5 text-xs text-gray-500">{term("Annual weather pattern analysis")}</p>
+          <h3 className="font-semibold text-white">{term("Climate Analytics")} — {location}</h3>
+          <p className="mt-0.5 text-xs text-gray-500">{term("Annual meteorological pattern & agro-climatic profile")}</p>
         </div>
         <div className="flex items-center gap-4">
           {legend.map((item) => (
@@ -67,7 +111,7 @@ export function ClimateChart() {
       </div>
 
       <ResponsiveContainer width="100%" height={240}>
-        <LineChart data={climateMonthlyData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+        <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
           <XAxis dataKey="month" tick={{ fill: "#6b7280", fontSize: 11 }} axisLine={false} tickLine={false} />
           <YAxis tick={{ fill: "#6b7280", fontSize: 11 }} axisLine={false} tickLine={false} />

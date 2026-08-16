@@ -375,19 +375,12 @@ export default function DiseaseDetectionPage() {
       setScanStage(3);
       console.warn("API scan notice:", err.message);
 
-      const fallbackResult: CustomScanResult = {
-        is_mango_leaf: true,
-        disease: "Anthracnose",
-        confidence: 94.2,
-        severity: "High",
-        treatment: "Apply Copper Hydroxide 0.2% spray every 7 days. Prune infected canopy branches.",
-        description: "Colletotrichum gloeosporioides fungal infection causing dark brown/black lesions and defoliation.",
-      };
-      setScanResult(fallbackResult);
-      if (previewUrl) {
-        const heatmap = await createVisualHeatmapOverlay(previewUrl);
-        setHeatmapB64(heatmap);
-      }
+      setErrorMsg(
+        err.message?.includes("Failed to fetch") || err.message?.includes("NetworkError")
+          ? "Unable to connect to Python AI Backend (port 8000). Please ensure the backend server is running."
+          : `Prediction error: ${err.message || "Unknown error"}`
+      );
+      setScanResult(null);
     } finally {
       setIsScanning(false);
     }

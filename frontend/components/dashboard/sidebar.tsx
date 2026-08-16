@@ -19,6 +19,7 @@ import {
   Zap,
   Bot,
   Sparkles,
+  Headphones,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDashboardStore } from "@/store/dashboard-store";
@@ -33,6 +34,7 @@ const navItems = [
   { id: "climate-monitoring", label: "Climate Monitor", icon: CloudSun, href: "/dashboard/climate-monitoring" },
   { id: "ai-recommendations", label: "AI Recommendations", icon: Brain, href: "/dashboard/ai-recommendations", badge: "6" },
   { id: "dataflow", label: "AI Dataflow", icon: GitBranch, href: "/dashboard/dataflow" },
+  { id: "help-center", label: "Help Center", icon: Headphones, href: "/dashboard/help-center", badge: "Direct" },
   { id: "settings", label: "Settings", icon: Settings, href: "/dashboard/settings" },
 ];
 

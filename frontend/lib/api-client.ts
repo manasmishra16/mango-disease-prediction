@@ -195,6 +195,14 @@ export async function getRevenueAnalytics(): Promise<RevenueAnalyticsResponse> {
 // --------------------------------------------
 // Climate Monitoring
 // --------------------------------------------
+export interface KarnatakaDistrictInfo {
+  name: string;
+  region: string;
+  mangoZone: string;
+  lat: number;
+  lon: number;
+}
+
 export interface ClimateMonitorResponse {
   currentWeather: {
     temp: number;
@@ -205,6 +213,10 @@ export interface ClimateMonitorResponse {
     visibility: number;
     condition: string;
     location: string;
+    region?: string;
+    latitude?: number;
+    longitude?: number;
+    mangoZone?: string;
   };
   forecast: {
     day: string;
@@ -219,10 +231,16 @@ export interface ClimateMonitorResponse {
     humidity: number;
     wind: number;
   }[];
+  allDistricts?: KarnatakaDistrictInfo[];
 }
 
-export async function getClimateMonitorData(): Promise<ClimateMonitorResponse> {
-  return fetchJson<ClimateMonitorResponse>("/api/climate-monitor");
+export async function getClimateMonitorData(district?: string): Promise<ClimateMonitorResponse> {
+  const query = district ? `?district=${encodeURIComponent(district)}` : "";
+  return fetchJson<ClimateMonitorResponse>(`/api/climate-monitor${query}`);
+}
+
+export async function getKarnatakaDistricts(): Promise<KarnatakaDistrictInfo[]> {
+  return fetchJson<KarnatakaDistrictInfo[]>("/api/climate/districts");
 }
 
 // --------------------------------------------
@@ -400,3 +418,112 @@ export async function getAgentPresets(): Promise<{ presets: AgentPreset[] }> {
 export async function getAgentStatus(): Promise<AgentStatusResponse> {
   return fetchJson<AgentStatusResponse>("/api/agent/status");
 }
+
+// --------------------------------------------
+// Help Center & Farmer Direct Support
+// --------------------------------------------
+export interface HelpTicketReply {
+  id: string;
+  author: string;
+  role: string;
+  isAdmin: boolean;
+  timestamp: string;
+  message: string;
+}
+
+export interface HelpTicket {
+  id: string;
+  farmerName: string;
+  phone?: string;
+  email?: string;
+  district: string;
+  mangoVariety: string;
+  category: string;
+  priority: "Low" | "Medium" | "High" | "Urgent";
+  status: "Open" | "In Progress" | "Answered" | "Resolved";
+  subject: string;
+  message: string;
+  createdAt: string;
+  updatedAt: string;
+  replies: HelpTicketReply[];
+}
+
+export interface HelpCenterStats {
+  totalInquiries: number;
+  openInquiries: number;
+  inProgress: number;
+  answered: number;
+  resolved: number;
+  resolutionRate: string;
+  avgResponseTime: string;
+  adminLead: string;
+}
+
+export interface CreateTicketParams {
+  farmerName: string;
+  phone?: string;
+  email?: string;
+  district: string;
+  mangoVariety?: string;
+  category: string;
+  priority?: string;
+  subject: string;
+  message: string;
+}
+
+export async function getHelpTickets(filters?: {
+  status?: string;
+  category?: string;
+  district?: string;
+  search?: string;
+}): Promise<HelpTicket[]> {
+  const params = new URLSearchParams();
+  if (filters?.status && filters.status !== "All") params.append("status", filters.status);
+  if (filters?.category && filters.category !== "All") params.append("category", filters.category);
+  if (filters?.district && filters.district !== "All") params.append("district", filters.district);
+  if (filters?.search) params.append("search", filters.search);
+
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  return fetchJson<HelpTicket[]>(`/api/help-center/tickets${qs}`);
+}
+
+export async function createHelpTicket(params: CreateTicketParams): Promise<HelpTicket> {
+  return fetchJson<HelpTicket>("/api/help-center/tickets", {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+}
+
+export async function replyToHelpTicket(ticketId: string, message: string, author?: string): Promise<HelpTicket> {
+  return fetchJson<HelpTicket>(`/api/help-center/tickets/${ticketId}/reply`, {
+    method: "POST",
+    body: JSON.stringify({
+      message,
+      author: author || "Manas (Admin / KSIT)",
+      role: "Lead Administrator",
+      isAdmin: true,
+    }),
+  });
+}
+
+export async function updateTicketStatus(
+  ticketId: string,
+  status: "Open" | "In Progress" | "Answered" | "Resolved",
+  priority?: string
+): Promise<HelpTicket> {
+  return fetchJson<HelpTicket>(`/api/help-center/tickets/${ticketId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status, priority }),
+  });
+}
+
+export async function deleteHelpTicket(ticketId: string): Promise<{ success: boolean }> {
+  return fetchJson<{ success: boolean }>(`/api/help-center/tickets/${ticketId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function getHelpCenterStats(): Promise<HelpCenterStats> {
+  return fetchJson<HelpCenterStats>("/api/help-center/stats");
+}
+

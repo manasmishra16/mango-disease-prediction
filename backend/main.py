@@ -370,6 +370,27 @@ class RevenueRequest(BaseModel):
     season: str = "peak"
     hectares: float = 1.0
 
+class HelpTicketCreateRequest(BaseModel):
+    farmerName: str
+    phone: Optional[str] = ""
+    email: Optional[str] = ""
+    district: Optional[str] = "Hassan"
+    mangoVariety: Optional[str] = "General"
+    category: Optional[str] = "Disease Diagnosis"
+    priority: Optional[str] = "Medium"
+    subject: str
+    message: str
+
+class HelpTicketReplyRequest(BaseModel):
+    message: str
+    author: Optional[str] = "Manas (Admin / KSIT)"
+    role: Optional[str] = "Lead Administrator"
+    isAdmin: Optional[bool] = True
+
+class HelpTicketStatusUpdateRequest(BaseModel):
+    status: str
+    priority: Optional[str] = None
+
 
 # ──────────────────────────────────────────────
 # Helper: Native Grad-CAM Generator
@@ -720,8 +741,13 @@ def get_revenue_analytics():
 
 
 @app.get("/api/climate-monitor")
-def get_climate_data():
-    return climate.fetch_open_meteo_climate()
+def get_climate_data(district: Optional[str] = "Hassan"):
+    return climate.fetch_open_meteo_climate(district_name=district)
+
+
+@app.get("/api/climate/districts")
+def get_karnataka_districts():
+    return climate.get_karnataka_districts_list()
 
 
 @app.get("/api/recommendations")
@@ -857,3 +883,96 @@ def predict_revenue(req: RevenueRequest):
         "recommendation": report.recommendation,
         "treatment": report.treatment
     }
+
+
+# ──────────────────────────────────────────────
+# Help Center & Direct Farmer Support Endpoints
+# ──────────────────────────────────────────────
+
+@app.get("/api/help-center/tickets")
+def get_tickets(
+    status: Optional[str] = None,
+    category: Optional[str] = None,
+    district: Optional[str] = None,
+    search: Optional[str] = None
+):
+    tickets = store.get_help_tickets()
+    if status and status != "All":
+        tickets = [t for t in tickets if t.get("status", "").lower() == status.lower()]
+    if category and category != "All":
+        tickets = [t for t in tickets if t.get("category", "").lower() == category.lower()]
+    if district and district != "All":
+        tickets = [t for t in tickets if district.lower() in t.get("district", "").lower()]
+    if search:
+        s = search.lower()
+        tickets = [
+            t for t in tickets
+            if s in t.get("farmerName", "").lower()
+            or s in t.get("subject", "").lower()
+            or s in t.get("message", "").lower()
+            or s in t.get("district", "").lower()
+            or s in t.get("mangoVariety", "").lower()
+            or s in t.get("phone", "").lower()
+        ]
+    return tickets
+
+
+@app.post("/api/help-center/tickets")
+def create_ticket(req: HelpTicketCreateRequest):
+    if not req.farmerName.strip() or not req.subject.strip() or not req.message.strip():
+        raise HTTPException(status_code=400, detail="Farmer Name, Subject, and Message are required.")
+    
+    new_ticket = store.create_help_ticket(req.dict())
+    return new_ticket
+
+
+@app.get("/api/help-center/tickets/{ticket_id}")
+def get_single_ticket(ticket_id: str):
+    tickets = store.get_help_tickets()
+    for t in tickets:
+        if t.get("id") == ticket_id:
+            return t
+    raise HTTPException(status_code=404, detail="Inquiry ticket not found.")
+
+
+@app.post("/api/help-center/tickets/{ticket_id}/reply")
+def reply_to_ticket(ticket_id: str, req: HelpTicketReplyRequest):
+    if not req.message.strip():
+        raise HTTPException(status_code=400, detail="Reply message cannot be empty.")
+    
+    updated = store.add_ticket_reply(
+        ticket_id=ticket_id,
+        reply_text=req.message,
+        author=req.author or "Manas (Admin / KSIT)",
+        role=req.role or "Lead Administrator",
+        is_admin=req.isAdmin if req.isAdmin is not None else True
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Inquiry ticket not found.")
+    return updated
+
+
+@app.patch("/api/help-center/tickets/{ticket_id}/status")
+def update_ticket_status_endpoint(ticket_id: str, req: HelpTicketStatusUpdateRequest):
+    updated = store.update_ticket_status(
+        ticket_id=ticket_id,
+        status=req.status,
+        priority=req.priority
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Inquiry ticket not found.")
+    return updated
+
+
+@app.delete("/api/help-center/tickets/{ticket_id}")
+def delete_ticket_endpoint(ticket_id: str):
+    success = store.delete_help_ticket(ticket_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Inquiry ticket not found.")
+    return {"success": True, "deletedTicketId": ticket_id}
+
+
+@app.get("/api/help-center/stats")
+def get_help_stats():
+    return store.get_help_center_stats()
+
