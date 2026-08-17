@@ -40,7 +40,7 @@ function SliderInput({ label, icon: Icon, value, min, max, unit, color, onChange
           {value}{unit}
         </span>
       </div>
-      <div className="relative h-2 bg-white/5 rounded-full">
+      <div className="relative h-2 bg-[var(--surface-soft)] rounded-full border border-[var(--border-subtle)]">
         <div
           className="absolute h-full rounded-full"
           style={{ width: `${pct}%`, background: color, boxShadow: `0 0 8px ${color}60` }}
@@ -54,7 +54,7 @@ function SliderInput({ label, icon: Icon, value, min, max, unit, color, onChange
           className="absolute inset-0 w-full opacity-0 cursor-pointer h-full z-10"
         />
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-white shadow-lg transition-all pointer-events-none"
+          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-[var(--background-elevated)] shadow-lg transition-all pointer-events-none"
           style={{ left: `calc(${pct}% - 8px)`, background: color }}
         />
       </div>

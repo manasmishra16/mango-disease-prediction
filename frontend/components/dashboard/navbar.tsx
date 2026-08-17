@@ -341,8 +341,10 @@ export function Navbar() {
     >
       <div className="flex items-center gap-4">
         <button
+          type="button"
           onClick={toggleSidebar}
-          className="rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--text-primary)] lg:hidden"
+          className="rounded-xl p-2 text-[var(--text-muted)] transition-all hover:bg-[var(--surface-soft)] hover:text-yellow-400 hover:scale-105 cursor-pointer"
+          title="Toggle Navigation (Ctrl + B)"
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -396,9 +398,9 @@ export function Navbar() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.95 }}
                 transition={{ duration: 0.18, ease: "easeOut" }}
-                className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border border-white/10 bg-[#0d0f17]/95 p-4 shadow-2xl backdrop-blur-xl z-50 space-y-3"
+                className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border border-[var(--border-subtle)] bg-[var(--background-elevated)] p-4 shadow-2xl backdrop-blur-xl z-50 space-y-3"
               >
-                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
                   <div className="flex items-center gap-2">
                     <Bell className="h-4 w-4 text-yellow-400" />
                     <span className="font-semibold text-white text-sm">Notifications</span>
@@ -513,26 +515,26 @@ export function Navbar() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.95 }}
                 transition={{ duration: 0.15 }}
-                className="absolute right-0 mt-2 w-64 rounded-2xl border border-white/10 bg-[#0d0f17]/95 p-3 shadow-2xl backdrop-blur-xl z-50 space-y-3"
+                className="absolute right-0 mt-2 w-64 rounded-2xl border border-[var(--border-subtle)] bg-[var(--background-elevated)] p-3 shadow-2xl backdrop-blur-xl z-50 space-y-3"
               >
-                <div className="flex items-center gap-3 p-2 rounded-xl bg-white/4">
+                <div className="flex items-center gap-3 p-2 rounded-xl bg-[var(--surface-soft)]">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-amber-600 text-base font-bold text-black">
                     {userInitial}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-white truncate">{user?.fullName || "User"}</p>
-                    <p className="text-xs text-gray-400 truncate">{user?.email || "user@mangodl.ai"}</p>
+                    <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{user?.fullName || "User"}</p>
+                    <p className="text-xs text-[var(--text-muted)] truncate">{user?.email || "user@mangodl.ai"}</p>
                   </div>
                 </div>
 
-                <div className="px-2 py-1 flex items-center justify-between border-t border-b border-white/5 text-xs text-gray-400">
+                <div className="px-2 py-1 flex items-center justify-between border-t border-b border-[var(--border-subtle)] text-xs text-[var(--text-muted)]">
                   <span>Role</span>
                   <NeonBadge label={user?.role || "Manager"} variant="mango" size="sm" />
                 </div>
 
                 <div className="space-y-1">
                   <Link href="/dashboard/settings" onClick={() => setUserMenuOpen(false)}>
-                    <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-gray-300 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+                    <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-soft)] transition-colors cursor-pointer">
                       <UserIcon className="h-4 w-4 text-yellow-400" />
                       <span>Account Settings</span>
                     </div>
@@ -561,7 +563,7 @@ export function Navbar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSearchOpen(false)}
-              className="fixed inset-0 bg-black/80 backdrop-blur-md"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
             />
 
             {/* Command Palette Card */}
@@ -570,10 +572,10 @@ export function Navbar() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -16 }}
               transition={{ type: "spring", stiffness: 350, damping: 28 }}
-              className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-[#0d0f17]/95 shadow-2xl backdrop-blur-2xl"
+              className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--background-elevated)] shadow-2xl backdrop-blur-2xl"
             >
               {/* Input Header */}
-              <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3.5">
+              <div className="flex items-center gap-3 border-b border-[var(--border-subtle)] px-4 py-3.5">
                 <Search className="h-5 w-5 text-yellow-400 shrink-0 animate-pulse" />
                 <input
                   ref={searchInputRef}

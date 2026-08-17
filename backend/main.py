@@ -645,8 +645,22 @@ async def predict_disease(file: UploadFile = File(...)):
 
 
 @app.get("/api/disease-detection/history")
-def get_disease_history():
-    return store.get_scan_history()
+def get_disease_history(limit: int = 50):
+    return store.get_scan_history(limit=limit)
+
+
+@app.post("/api/disease-detection/history/prune")
+def prune_disease_history(limit: int = 50):
+    updated = store.prune_scan_history(keep=limit)
+    return {"status": "success", "count": len(updated), "history": updated}
+
+
+@app.delete("/api/disease-detection/history/{record_id}")
+def delete_single_history_record(record_id: int):
+    history = store.get_scan_history()
+    new_hist = [r for r in history if r.get("id") != record_id]
+    store.save_json(store.SCAN_HISTORY_FILE, new_hist)
+    return {"status": "success", "remaining": len(new_hist)}
 
 
 @app.post("/api/yield-prediction/calculate")

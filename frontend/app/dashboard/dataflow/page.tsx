@@ -205,7 +205,8 @@ export default function DataflowPage() {
                         x={x}
                         y={y + r + 16}
                         textAnchor="middle"
-                        fill="white"
+                        fill="currentColor"
+                        className="text-[var(--text-primary)]"
                         fontSize={11}
                         fontWeight={600}
                         fontFamily="Inter, sans-serif"
@@ -216,7 +217,8 @@ export default function DataflowPage() {
                         x={x}
                         y={y + r + 28}
                         textAnchor="middle"
-                        fill="#6b7280"
+                        fill="currentColor"
+                        className="text-[var(--text-muted)]"
                         fontSize={9}
                         fontFamily="Inter, sans-serif"
                       >

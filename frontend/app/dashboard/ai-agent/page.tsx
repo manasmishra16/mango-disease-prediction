@@ -396,18 +396,18 @@ Could not connect to online LLM endpoint. Fallback active:
                       className={`relative max-w-[85%] rounded-2xl p-4 text-xs sm:text-sm leading-relaxed shadow-lg ${
                         msg.role === "user"
                           ? "bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-medium shadow-[0_4px_20px_rgba(245,158,11,0.25)] rounded-tr-none"
-                          : "bg-[#14181f]/90 border border-white/10 text-gray-200 rounded-tl-none backdrop-blur-md"
+                          : "bg-[var(--surface)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-tl-none backdrop-blur-md"
                       }`}
                     >
                       {/* Assistant Header Badge */}
                       {msg.role === "assistant" && (
-                        <div className="flex items-center justify-between gap-3 border-b border-white/5 pb-2 mb-2 text-[11px] text-gray-400">
-                          <span className="font-mono text-yellow-400 font-medium truncate">{msg.modelUsed || "MangoDL AI Copilot"}</span>
+                        <div className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-2 mb-2 text-[11px] text-[var(--text-muted)]">
+                          <span className="font-mono text-yellow-500 font-medium truncate">{msg.modelUsed || "MangoDL AI Copilot"}</span>
                           <div className="flex items-center gap-2 shrink-0">
                             {msg.latencyMs && <span>{msg.latencyMs}ms</span>}
                             <button
                               onClick={() => handleCopyText(msg.content, index)}
-                              className="hover:text-white transition-colors p-0.5"
+                              className="hover:text-yellow-400 transition-colors p-0.5"
                               title="Copy message"
                             >
                               {copiedIndex === index ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
@@ -423,20 +423,20 @@ Could not connect to online LLM endpoint. Fallback active:
 
                       {/* Action Card Rendering */}
                       {msg.action && (
-                        <div className="mt-3.5 p-3.5 rounded-xl bg-black/60 border border-yellow-500/30 space-y-2.5">
+                        <div className="mt-3.5 p-3.5 rounded-xl bg-[var(--surface-soft)] border border-yellow-500/30 space-y-2.5">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-yellow-400 flex items-center gap-1.5">
+                            <span className="text-xs font-bold text-yellow-500 flex items-center gap-1.5">
                               <Zap className="h-4 w-4" />
                               {msg.action.title}
                             </span>
                             <NeonBadge label="ACTION CARD" variant="mango" />
                           </div>
                           {msg.action.data && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-300">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[var(--text-secondary)]">
                               {Object.entries(msg.action.data).map(([k, v]) => (
-                                <div key={k} className="p-2 rounded-lg bg-white/5 border border-white/5">
-                                  <span className="text-gray-400 block text-[10px] uppercase font-mono">{k.replace("_", " ")}</span>
-                                  <span className="font-medium text-white truncate block mt-0.5">{String(v)}</span>
+                                <div key={k} className="p-2 rounded-lg bg-[var(--background-elevated)] border border-[var(--border-subtle)]">
+                                  <span className="text-[var(--text-muted)] block text-[10px] uppercase font-mono">{k.replace("_", " ")}</span>
+                                  <span className="font-medium text-[var(--text-primary)] truncate block mt-0.5">{String(v)}</span>
                                 </div>
                               ))}
                             </div>
@@ -446,16 +446,17 @@ Could not connect to online LLM endpoint. Fallback active:
 
                       {/* Follow-up Questions */}
                       {msg.suggestedQuestions && msg.suggestedQuestions.length > 0 && index === messages.length - 1 && (
-                        <div className="mt-4 pt-3 border-t border-white/10 space-y-2">
-                          <span className="text-[10px] text-gray-400 uppercase font-mono tracking-wider block">Recommended Follow-ups:</span>
-                          <div className="flex flex-wrap gap-1.5">
-                            {msg.suggestedQuestions.map((q, qIdx) => (
+                        <div className="mt-4 pt-3 border-t border-[var(--border-subtle)] space-y-2">
+                          <span className="text-[10px] text-[var(--text-muted)] uppercase font-mono tracking-wider block">Recommended Follow-ups:</span>
+                          <div className="flex flex-wrap gap-2">
+                            {msg.suggestedQuestions.map((q, qIndex) => (
                               <button
-                                key={qIdx}
+                                key={qIndex}
                                 onClick={() => handleSendMessage(q)}
-                                className="text-left text-xs px-3 py-1.5 rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-300 border border-yellow-500/25 transition-all"
+                                className="text-left text-xs px-3 py-1.5 rounded-xl bg-[var(--surface-soft)] hover:bg-yellow-500/15 border border-[var(--border-subtle)] hover:border-yellow-500/40 text-[var(--text-primary)] hover:text-yellow-500 transition-all flex items-center gap-1.5"
                               >
-                                → {q}
+                                <Sparkles className="h-3 w-3 text-yellow-500 shrink-0" />
+                                <span>{q}</span>
                               </button>
                             ))}
                           </div>
@@ -464,7 +465,7 @@ Could not connect to online LLM endpoint. Fallback active:
                     </div>
 
                     {msg.role === "user" && (
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white mt-0.5">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-yellow-500/20 text-yellow-500 mt-0.5">
                         <User className="h-5 w-5" />
                       </div>
                     )}
@@ -473,10 +474,10 @@ Could not connect to online LLM endpoint. Fallback active:
 
                 {isLoading && (
                   <div className="flex gap-3.5 items-start">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-yellow-500/20 border border-yellow-500/30 text-yellow-400">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-yellow-500/20 border border-yellow-500/30 text-yellow-500">
                       <Bot className="h-5 w-5 animate-spin" />
                     </div>
-                    <div className="rounded-2xl rounded-tl-none bg-[#14181f] border border-white/10 p-4 text-xs text-gray-400 flex items-center gap-3">
+                    <div className="rounded-2xl rounded-tl-none bg-[var(--surface)] border border-[var(--border-subtle)] p-4 text-xs text-[var(--text-muted)] flex items-center gap-3">
                       <span className="h-2.5 w-2.5 rounded-full bg-yellow-400 animate-ping" />
                       <span>Synthesizing live orchard telemetry, disease knowledge, and dosage formulas...</span>
                     </div>
@@ -486,21 +487,21 @@ Could not connect to online LLM endpoint. Fallback active:
               </div>
 
               {/* Quick Presets Drawer */}
-              <div className="px-5 py-2.5 border-t border-white/10 bg-black/30 flex gap-2 overflow-x-auto scrollbar-none">
+              <div className="px-5 py-2.5 border-t border-[var(--border-subtle)] bg-[var(--surface-soft)] flex gap-2 overflow-x-auto scrollbar-none">
                 {filteredPresets.map((p) => (
                   <button
                     key={p.id}
                     onClick={() => handleSendMessage(p.prompt)}
-                    className="shrink-0 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-gray-300 hover:text-white transition-all text-left flex items-center gap-1.5"
+                    className="shrink-0 px-3 py-1.5 rounded-xl bg-[var(--background-elevated)] hover:bg-yellow-500/15 border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all text-left flex items-center gap-1.5"
                   >
-                    <Sparkles className="h-3 w-3 text-yellow-400" />
+                    <Sparkles className="h-3 w-3 text-yellow-500" />
                     <span>{p.title}</span>
                   </button>
                 ))}
               </div>
 
               {/* Message Input Bar */}
-              <div className="border-t border-white/10 p-4 bg-black/60">
+              <div className="border-t border-[var(--border-subtle)] p-4 bg-[var(--surface)]">
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();

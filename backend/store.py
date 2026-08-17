@@ -212,15 +212,42 @@ def create_user(full_name: str, email: str, password_hash: str, salt: str, role:
     save_json(USERS_FILE, users)
     return user
 
-# Scan History
-def get_scan_history() -> List[Dict[str, Any]]:
-    return load_json(SCAN_HISTORY_FILE, DEFAULT_HISTORY)
+MAX_SCAN_HISTORY = 50
 
-def add_scan_history(record: Dict[str, Any]):
-    history = get_scan_history()
-    record["id"] = len(history) + 1
+# Scan History
+def get_scan_history(limit: int = MAX_SCAN_HISTORY) -> List[Dict[str, Any]]:
+    history = load_json(SCAN_HISTORY_FILE, DEFAULT_HISTORY)
+    if isinstance(history, list) and len(history) > limit:
+        # Strictly keep only recent 50 history and delete older entries
+        history = history[:limit]
+        save_json(SCAN_HISTORY_FILE, history)
+    return history
+
+def add_scan_history(record: Dict[str, Any], limit: int = MAX_SCAN_HISTORY):
+    history = load_json(SCAN_HISTORY_FILE, DEFAULT_HISTORY)
+    if not isinstance(history, list):
+        history = []
+    
+    # Generate sequential unique id
+    highest_id = max([r.get("id", 0) for r in history if isinstance(r, dict)], default=0)
+    record["id"] = highest_id + 1
+    
+    # Insert newest at top
     history.insert(0, record)
+    
+    # Strictly retain only the recent 50 history items, automatically deleting older ones
+    if len(history) > limit:
+        history = history[:limit]
+        
     save_json(SCAN_HISTORY_FILE, history)
+
+def prune_scan_history(keep: int = MAX_SCAN_HISTORY) -> List[Dict[str, Any]]:
+    """Explicit utility to prune history down to recent 50 entries."""
+    history = load_json(SCAN_HISTORY_FILE, DEFAULT_HISTORY)
+    if isinstance(history, list):
+        history = history[:keep]
+        save_json(SCAN_HISTORY_FILE, history)
+    return history
 
 # Settings
 def get_settings() -> Dict[str, Any]:

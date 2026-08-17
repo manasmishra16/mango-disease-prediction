@@ -136,7 +136,7 @@ export default function AIRecommendationsPage() {
                   <Brain className="w-6 h-6 text-violet-400" />
                 </div>
                 <motion.div
-                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-400 border-2 border-[#0a0b0f] flex items-center justify-center"
+                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-400 border-2 border-[var(--background)] flex items-center justify-center"
                   animate={{ scale: [1, 1.2, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >

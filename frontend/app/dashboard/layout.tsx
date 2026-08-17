@@ -1,16 +1,30 @@
 "use client";
 
+import { useEffect } from "react";
 import { Navbar } from "@/components/dashboard/navbar";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { AuthGuard } from "@/components/app/auth-guard";
 import { AIAgentWidget } from "@/components/dashboard/ai-agent-widget";
 import { MobileBottomNav } from "@/components/dashboard/mobile-bottom-nav";
+import { useDashboardStore } from "@/store/dashboard-store";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const toggleSidebar = useDashboardStore((state) => state.toggleSidebar);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        toggleSidebar();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [toggleSidebar]);
   return (
     <AuthGuard>
       <div className="flex h-screen overflow-hidden bg-[var(--background)]">

@@ -186,7 +186,12 @@ export default function ClimateMonitoringPage() {
         
         {/* Top Header & District Switcher */}
         <StaggerItem>
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-[#12161f] via-[#0f1a14] to-[#12161f] border border-white/[0.08] relative overflow-visible">
+          <div
+            className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 rounded-2xl border border-[var(--border-subtle)] relative overflow-visible shadow-xl backdrop-blur-xl"
+            style={{
+              background: "linear-gradient(135deg, color-mix(in srgb, var(--surface) 96%, transparent) 0%, color-mix(in srgb, var(--surface-soft) 92%, transparent) 50%, color-mix(in srgb, var(--background-elevated) 96%, transparent) 100%)",
+            }}
+          >
             {/* Background ambient light */}
             <div className="absolute -top-16 -right-16 w-52 h-52 rounded-full bg-cyan-500/[0.08] blur-3xl pointer-events-none" />
 
@@ -209,7 +214,7 @@ export default function ClimateMonitoringPage() {
                 <button
                   type="button"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.10] border border-cyan-500/30 hover:border-cyan-400/60 text-white font-semibold text-sm transition-all duration-200 shadow-lg shadow-cyan-950/30 group"
+                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-[var(--surface-soft)] hover:bg-[var(--surface)] border border-cyan-500/30 hover:border-cyan-400/60 text-[var(--text-primary)] font-semibold text-sm transition-all duration-200 shadow-md group"
                 >
                   <MapPin className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
                   <span className="tracking-wide">
@@ -234,7 +239,7 @@ export default function ClimateMonitoringPage() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.96 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-2xl bg-[#0e131d]/95 backdrop-blur-xl border border-white/[0.12] shadow-2xl shadow-black/80 p-3 z-50 flex flex-col gap-2.5 max-h-[460px]"
+                      className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-2xl bg-[var(--background-elevated)] backdrop-blur-xl border border-[var(--border-subtle)] shadow-2xl p-3 z-50 flex flex-col gap-2.5 max-h-[460px]"
                     >
                       {/* Search Bar */}
                       <div className="relative">
@@ -338,7 +343,7 @@ export default function ClimateMonitoringPage() {
 
         {/* District Agro-Zone Alert Banner */}
         <StaggerItem>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-cyan-950/20 border border-cyan-500/20 text-xs">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs">
             <div className="flex items-center gap-2.5">
               <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
               <span className="text-gray-300 font-medium">
@@ -349,7 +354,7 @@ export default function ClimateMonitoringPage() {
             <div className="flex items-center gap-2 text-gray-400 shrink-0 font-mono text-[11px]">
               <span>Geo: {curr.latitude ? `${curr.latitude}°N, ${curr.longitude}°E` : "Karnataka"}</span>
               <span>•</span>
-              <span className="text-green-400">Condition: {curr.condition}</span>
+              <span className="text-green-400">{term("Condition")}: {term(curr.condition)}</span>
             </div>
           </div>
         </StaggerItem>

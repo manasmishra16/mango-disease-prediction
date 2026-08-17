@@ -288,29 +288,29 @@ export default function LandingPage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[#0d0f17]/95 p-6 md:p-8 shadow-2xl backdrop-blur-2xl"
+              className="relative w-full max-w-md overflow-hidden rounded-3xl border border-[var(--border-subtle)] bg-[var(--background-elevated)] p-6 md:p-8 shadow-2xl backdrop-blur-2xl"
             >
               {/* Close Button */}
               <button
                 type="button"
                 onClick={() => setShowAuthModal(false)}
-                className="absolute top-4 right-4 p-1.5 rounded-full bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+                className="absolute top-4 right-4 p-2 rounded-full bg-[var(--surface-soft)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-strong)] transition-all"
               >
                 <X className="w-4 h-4" />
               </button>
 
               {/* Header Warning */}
               <div className="text-center space-y-3 mb-6">
-                <div className="w-16 h-16 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center mx-auto shadow-[0_0_24px_rgba(245,158,11,0.2)]">
-                  <Lock className="w-8 h-8 text-yellow-400" />
+                <div className="w-16 h-16 rounded-2xl bg-yellow-500/15 border border-yellow-500/30 flex items-center justify-center mx-auto shadow-[0_0_24px_rgba(245,158,11,0.2)]">
+                  <Lock className="w-8 h-8 text-yellow-500" />
                 </div>
                 <div>
                   <div className="flex items-center justify-center gap-1.5 mb-1">
-                    <ShieldAlert className="w-4 h-4 text-yellow-400" />
-                    <span className="text-xs font-semibold text-yellow-400 uppercase tracking-wider">Authentication Required</span>
+                    <ShieldAlert className="w-4 h-4 text-yellow-500" />
+                    <span className="text-xs font-semibold text-amber-600 dark:text-yellow-400 uppercase tracking-wider">Authentication Required</span>
                   </div>
-                  <h2 className="text-white font-display text-xl font-bold">Sign In to Dashboard</h2>
-                  <p className="text-gray-400 text-xs mt-1">
+                  <h2 className="text-[var(--text-primary)] font-display text-xl font-bold">Sign In to Dashboard</h2>
+                  <p className="text-[var(--text-muted)] text-xs mt-1">
                     You must authenticate to access the MangoDL AI Agriculture Intelligence Platform.
                   </p>
                 </div>
@@ -323,26 +323,26 @@ export default function LandingPage() {
                 onClick={handleInstantDemoLogin}
                 type="button"
                 disabled={isLoading}
-                className="w-full mb-5 p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 hover:bg-cyan-500/20 text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(34,211,238,0.15)]"
+                className="w-full mb-5 p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-600 dark:text-cyan-300 hover:bg-cyan-500/20 text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-md"
               >
-                <Zap className="w-4 h-4 text-cyan-400" />
+                <Zap className="w-4 h-4 text-cyan-500" />
                 <span>⚡ Instant Demo Sign In to Dashboard</span>
                 <NeonBadge label="1-Click" variant="cyan" size="sm" />
               </motion.button>
 
               <div className="relative flex items-center justify-center mb-5">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/10" />
+                  <div className="w-full border-t border-[var(--border-subtle)]" />
                 </div>
-                <span className="relative px-3 bg-[#0d0f17] text-[10px] text-gray-500 uppercase tracking-widest font-semibold">
+                <span className="relative px-3 bg-[var(--background-elevated)] text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-semibold">
                   Or Sign In with Credentials
                 </span>
               </div>
 
               {/* Form Error Banner */}
               {(error || formError) && (
-                <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+                <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-300 text-xs flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
                   <span>{formError || error}</span>
                 </div>
               )}
@@ -350,31 +350,31 @@ export default function LandingPage() {
               {/* Sign In Credentials Form */}
               <form onSubmit={handleCredentialsLogin} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Email Address</label>
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Email Address</label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-3 w-4 h-4 text-gray-500" />
+                    <Mail className="absolute left-3.5 top-3 w-4 h-4 text-[var(--text-muted)]" />
                     <input
                       type="email"
                       required
                       placeholder="name@mangodl.ai"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/4 border border-white/10 text-white text-xs placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 focus:bg-white/6 transition-all"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--surface-soft)] border border-[var(--border-subtle)] text-[var(--text-primary)] text-xs placeholder-[var(--text-muted)] focus:outline-none focus:border-yellow-500/50 transition-all"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Password</label>
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-3 w-4 h-4 text-gray-500" />
+                    <Lock className="absolute left-3.5 top-3 w-4 h-4 text-[var(--text-muted)]" />
                     <input
                       type="password"
                       required
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/4 border border-white/10 text-white text-xs placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 focus:bg-white/6 transition-all"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--surface-soft)] border border-[var(--border-subtle)] text-[var(--text-primary)] text-xs placeholder-[var(--text-muted)] focus:outline-none focus:border-yellow-500/50 transition-all"
                     />
                   </div>
                 </div>
@@ -391,7 +391,7 @@ export default function LandingPage() {
               </form>
 
               {/* Modal Footer */}
-              <div className="mt-5 pt-3 border-t border-white/5 text-center text-[10px] text-gray-500">
+              <div className="mt-5 pt-3 border-t border-[var(--border-subtle)] text-center text-[10px] text-[var(--text-muted)]">
                 Protected by MangoDL Security Guard v3.2
               </div>
             </motion.div>

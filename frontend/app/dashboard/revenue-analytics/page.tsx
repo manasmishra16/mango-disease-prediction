@@ -250,8 +250,8 @@ export default function RevenueAnalyticsPage() {
       <StaggerContainer className="space-y-6">
         {/* ─── Hero Header ─── */}
         <StaggerItem>
-          <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-6 md:p-8"
-            style={{ background: "linear-gradient(135deg, rgba(18,22,31,0.92) 0%, rgba(24,18,12,0.85) 50%, rgba(18,22,31,0.92) 100%)" }}
+          <div className="relative overflow-hidden rounded-2xl border border-[var(--border-subtle)] p-6 md:p-8"
+            style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--surface) 96%, transparent) 0%, color-mix(in srgb, var(--surface-soft) 92%, transparent) 50%, color-mix(in srgb, var(--background-elevated) 96%, transparent) 100%)" }}
           >
             <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-yellow-500/[0.07] blur-3xl pointer-events-none" />
             <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-green-500/[0.06] blur-3xl pointer-events-none" />

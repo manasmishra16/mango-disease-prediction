@@ -124,8 +124,20 @@ export async function scanDiseaseImage(file: File): Promise<DiseaseScanResponse>
   return res.json();
 }
 
-export async function getDiseaseHistory(): Promise<DiseaseHistoryRecord[]> {
-  return fetchJson<DiseaseHistoryRecord[]>("/api/disease-detection/history");
+export async function getDiseaseHistory(limit: number = 50): Promise<DiseaseHistoryRecord[]> {
+  return fetchJson<DiseaseHistoryRecord[]>(`/api/disease-detection/history?limit=${limit}`);
+}
+
+export async function pruneDiseaseHistory(limit: number = 50): Promise<{ status: string; count: number; history: DiseaseHistoryRecord[] }> {
+  return fetchJson<{ status: string; count: number; history: DiseaseHistoryRecord[] }>(`/api/disease-detection/history/prune?limit=${limit}`, {
+    method: "POST",
+  });
+}
+
+export async function deleteDiseaseHistoryRecord(recordId: number): Promise<{ status: string; remaining: number }> {
+  return fetchJson<{ status: string; remaining: number }>(`/api/disease-detection/history/${recordId}`, {
+    method: "DELETE",
+  });
 }
 
 // --------------------------------------------

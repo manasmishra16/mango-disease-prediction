@@ -239,7 +239,7 @@ Could not connect to online LLM router. Using local Agronomy Knowledge Base:
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="hidden lg:flex items-center gap-2 px-3.5 py-2 rounded-full border border-yellow-500/30 bg-black/80 backdrop-blur-md shadow-[0_0_20px_rgba(245,158,11,0.25)] text-xs text-yellow-300 font-medium cursor-pointer"
+            className="hidden lg:flex items-center gap-2 px-3.5 py-2 rounded-full border border-yellow-500/30 bg-[var(--background-elevated)] backdrop-blur-md shadow-[0_0_20px_rgba(245,158,11,0.25)] text-xs text-amber-500 font-medium cursor-pointer"
             onClick={() => setIsOpen(true)}
           >
             <span className="relative flex h-2 w-2">
@@ -247,7 +247,7 @@ Could not connect to online LLM router. Using local Agronomy Knowledge Base:
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
             </span>
             <span>Mango Agronomist AI</span>
-            <span className="px-1.5 py-0.5 rounded text-[10px] bg-yellow-500/20 text-yellow-400 font-bold">2.5 LIVE</span>
+            <span className="px-1.5 py-0.5 rounded text-[10px] bg-yellow-500/20 text-amber-600 dark:text-yellow-400 font-bold">2.5 LIVE</span>
           </motion.div>
         )}
 
@@ -280,7 +280,7 @@ Could not connect to online LLM router. Using local Agronomy Knowledge Base:
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.95 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className={`fixed z-50 flex flex-col rounded-2xl border border-yellow-500/25 bg-[#0e1217]/95 shadow-[0_12px_48px_rgba(0,0,0,0.8),0_0_32px_rgba(245,158,11,0.15)] backdrop-blur-2xl overflow-hidden transition-all duration-300 ${
+            className={`fixed z-50 flex flex-col rounded-2xl border border-yellow-500/25 bg-[var(--background-elevated)] shadow-[0_12px_48px_rgba(0,0,0,0.5),0_0_32px_rgba(245,158,11,0.15)] backdrop-blur-2xl overflow-hidden transition-all duration-300 ${
               isExpanded
                 ? "bottom-3 right-3 left-3 top-3 md:bottom-6 md:right-6 md:left-auto md:top-auto md:w-[720px] md:h-[82vh]"
                 : "bottom-20 md:bottom-24 right-3 md:right-6 left-3 sm:left-auto sm:w-[440px] h-[78vh] sm:h-[600px] max-h-[85vh]"
