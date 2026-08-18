@@ -429,6 +429,22 @@ def generate_gradcam_base64(image_pil: Image.Image, pred_idx: int, disease_name:
 
 
 # ──────────────────────────────────────────────
+# System & Health Verification Endpoints
+# ──────────────────────────────────────────────
+
+@app.get("/")
+@app.get("/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "service": "MangoDL FastAPI Backend",
+        "device": str(device),
+        "disease_model_loaded": model_disease is not None,
+        "yield_model_loaded": model_yield is not None,
+    }
+
+
+# ──────────────────────────────────────────────
 # Auth Endpoints
 # ──────────────────────────────────────────────
 
