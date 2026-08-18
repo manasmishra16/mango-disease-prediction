@@ -17,6 +17,8 @@ from PIL import Image
 from torchcam.methods import GradCAM
 from torchcam.utils import overlay_mask
 from torchvision.transforms.functional import to_pil_image
+from lime import lime_image
+from skimage.segmentation import mark_boundaries
 
 
 def generate_gradcam(model, image_tensor, target_layer='block6.0', class_idx=None, original_image=None, disease_name=None, device='cpu'):
@@ -156,8 +158,6 @@ def generate_lime(model, image_np, transform, class_names, num_samples=100, devi
         temp: visualization image
         mask: explanation mask
     """
-    from lime import lime_image
-    from skimage.segmentation import mark_boundaries
     model.eval()
     model.to(device)
     

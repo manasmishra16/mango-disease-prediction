@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 interface GlowButtonProps {
   children: ReactNode;
-  onClick?: (e?: any) => void;
+  onClick?: () => void;
   href?: string;
   variant?: "mango" | "neon" | "cyan" | "ghost" | "outline";
   size?: "sm" | "md" | "lg";
