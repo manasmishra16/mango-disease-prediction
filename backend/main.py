@@ -231,7 +231,6 @@ def startup_event():
     # 2. LiteLLM Router Setup
     print("Initializing LiteLLM fallback router...")
     gemini_keys = []
-    nvidia_keys = []
     env_path = Path(".env")
     if env_path.exists():
         content = env_path.read_text()
@@ -244,13 +243,9 @@ def startup_event():
             keys = re.findall(r'"([^"]*)"', v) or [x.strip() for x in v.split(",") if x.strip()]
             if k == "GEMINI_API_KEY":
                 gemini_keys.extend(keys)
-            elif k == "NVIDIA_API_KEY":
-                nvidia_keys.extend(keys)
 
     if not gemini_keys and os.getenv("GEMINI_API_KEY"):
         gemini_keys = [os.getenv("GEMINI_API_KEY")]
-    if not nvidia_keys and os.getenv("NVIDIA_API_KEY"):
-        nvidia_keys = [os.getenv("NVIDIA_API_KEY")]
 
     model_list = []
     fallback_chain = []

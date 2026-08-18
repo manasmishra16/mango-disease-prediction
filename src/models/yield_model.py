@@ -22,12 +22,9 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import xgboost as xgb
-import optuna
 from pathlib import Path
 import json
 import joblib
-
-optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 
 # ──────────────────────────────────────────────
@@ -268,6 +265,8 @@ def train_rf_baseline(X_train, y_train, X_test, y_test, seed=42):
 
 def optuna_xgboost(X_train, y_train, X_val, y_val, n_trials=100, seed=42):
     """Optuna-tuned XGBoost."""
+    import optuna
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
     def objective(trial):
         params = {
             'max_depth': trial.suggest_int('max_depth', 3, 10),
@@ -341,6 +340,7 @@ def ensemble_predict(xgb_preds, lstm_preds, w_xgb=0.6):
 
 def optuna_ensemble_weights(xgb_preds, lstm_preds, y_true, n_trials=50):
     """Find optimal ensemble weights via Optuna."""
+    import optuna
     def objective(trial):
         w = trial.suggest_float('w_xgb', 0.0, 1.0)
         blended = ensemble_predict(xgb_preds, lstm_preds, w)
