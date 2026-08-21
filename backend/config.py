@@ -1,9 +1,7 @@
-"""
-Centralized Configuration & Calibration Thresholds for MangoDL.
-All values can be overridden via environment variables.
-"""
-
 import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ──────────────────────────────────────────────
 # Stage 1: Basic Image Quality & Blur Thresholds
@@ -22,6 +20,10 @@ IMAGE_BLUR_THRESHOLD: float = float(os.getenv("IMAGE_BLUR_THRESHOLD", "30.0"))
 # Non-mango images score < 6.0%. Mango leaves score >= 70.0%.
 # 0.65 cleanly separates real non-mango objects from valid mango leaves.
 MANGO_LEAF_THRESHOLD: float = float(os.getenv("MANGO_LEAF_THRESHOLD", "0.65"))
+
+# Model weight file locations
+DOMAIN_GATE_MODEL_PATH: Path = BASE_DIR / "models" / "mango_leaf_gate_best.pt"
+DISEASE_MODEL_PATH: Path = BASE_DIR / "models" / "se_best.pt"
 
 
 # ──────────────────────────────────────────────

@@ -27,10 +27,10 @@ class MangoDomainGate(nn.Module):
         
         # Classification head
         self.classifier = nn.Sequential(
-            nn.Linear(576, 128),
+            nn.Linear(576, 256),
             nn.Hardswish(inplace=True),
             nn.Dropout(p=0.2, inplace=True),
-            nn.Linear(128, 1)
+            nn.Linear(256, 1)
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
