@@ -127,6 +127,21 @@ def predict_mango_disease_pipeline(
         }
 
     # 3. Hard Mango Leaf Domain Gate
+    if domain_gate_model is None:
+        # Attempt auto-load if not passed
+        gate_path = config.DOMAIN_GATE_MODEL_PATH
+        if gate_path.exists():
+            try:
+                domain_gate_model = MangoDomainGate(pretrained=False).to(device)
+                ckpt = torch.load(gate_path, map_location=device, weights_only=False)
+                state = ckpt.get("model_state_dict", ckpt)
+                domain_gate_model.load_state_dict(state)
+                domain_gate_model.eval()
+                logger.info(f"Auto-loaded MangoDomainGate from {gate_path}")
+            except Exception as e:
+                logger.error(f"Failed to auto-load domain gate: {e}")
+                domain_gate_model = None
+
     if domain_gate_model is not None:
         tensor_gate = domain_gate_transform(image_pil).unsqueeze(0).to(device)
         domain_gate_model.eval()
@@ -153,8 +168,22 @@ def predict_mango_disease_pipeline(
                 "heatmap_b64": "",
             }
     else:
-        logger.warning("Domain gate model is not loaded. Proceeding with caution.")
-        mango_prob = 1.0
+        logger.error("Domain gate model could not be loaded. Refusing inference on unverified image.")
+        return {
+            "status": "rejected",
+            "is_mango_leaf": False,
+            "prediction": None,
+            "disease": None,
+            "confidence": 0.0,
+            "message": "Domain validation gate is temporarily unavailable. Please verify model weights.",
+            "rejection_reason": "GATE_UNAVAILABLE",
+            "mango_leaf_prob": 0.0,
+            "severity": None,
+            "severity_score": 0.0,
+            "treatment": None,
+            "description": "Domain validation gate could not verify this leaf. Refusing inference for safety.",
+            "heatmap_b64": "",
+        }
 
     # 4. Existing PyTorch Mango Disease Model
     if disease_model is None:
