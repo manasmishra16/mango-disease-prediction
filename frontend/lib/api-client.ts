@@ -90,6 +90,7 @@ export async function logoutApi(token?: string): Promise<{ success: boolean }> {
 // --------------------------------------------
 export interface DiseaseScanResponse {
   is_mango_leaf?: boolean;
+  status?: string;
   disease: string;
   confidence: number;
   severity: "None" | "Low" | "Medium" | "High";
@@ -97,6 +98,7 @@ export interface DiseaseScanResponse {
   treatment: string;
   description: string;
   heatmap_b64: string;
+  message?: string;
 }
 
 export interface DiseaseHistoryRecord {
@@ -412,11 +414,72 @@ export async function sendAgentMessage(params: {
   model?: string;
   apiKey?: string;
   temperature?: number;
+  topic?: string;
 }): Promise<AgentChatResponse> {
   return fetchJson<AgentChatResponse>("/api/agent/chat", {
     method: "POST",
     body: JSON.stringify(params),
   });
+}
+
+export async function streamAgentMessage(
+  params: {
+    message: string;
+    history?: { role: string; content: string }[];
+    model?: string;
+    apiKey?: string;
+    temperature?: number;
+    topic?: string;
+  },
+  onToken: (token: string) => void,
+  onMeta?: (meta: { action?: any; suggestedQuestions?: string[]; modelUsed?: string }) => void,
+  signal?: AbortSignal
+): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/api/agent/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+    signal,
+  });
+
+  if (!res.ok) {
+    throw new Error(`Agent connection notice: Server returned ${res.status}`);
+  }
+
+  const reader = res.body?.getReader();
+  if (!reader) return;
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith("data: ")) {
+        try {
+          const payload = JSON.parse(trimmed.slice(6));
+          if (payload.type === "token" && payload.content) {
+            onToken(payload.content);
+          } else if (payload.type === "meta" && onMeta) {
+            onMeta({
+              action: payload.action,
+              suggestedQuestions: payload.suggestedQuestions,
+              modelUsed: payload.modelUsed,
+            });
+          }
+        } catch (e) {
+          // ignore stream parse errors
+        }
+      }
+    }
+  }
 }
 
 export async function getAgentModels(): Promise<AgentModelsResponse> {

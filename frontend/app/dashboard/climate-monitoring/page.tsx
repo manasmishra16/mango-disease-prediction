@@ -185,7 +185,7 @@ export default function ClimateMonitoringPage() {
       <StaggerContainer className="space-y-6">
         
         {/* Top Header & District Switcher */}
-        <StaggerItem>
+        <StaggerItem className={`relative ${isDropdownOpen ? "z-50" : "z-30"}`}>
           <div
             className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 rounded-2xl border border-[var(--border-subtle)] relative overflow-visible shadow-xl backdrop-blur-xl"
             style={{
@@ -209,7 +209,7 @@ export default function ClimateMonitoringPage() {
             </div>
 
             {/* Top Right District Toggle / Searchable Selector */}
-            <div className="flex items-center gap-3 relative z-30" ref={dropdownRef}>
+            <div className="flex items-center gap-3 relative" ref={dropdownRef}>
               <div className="relative">
                 <button
                   type="button"
@@ -231,6 +231,14 @@ export default function ClimateMonitoringPage() {
                   )}
                 </button>
 
+                {/* Fixed Backdrop Catcher */}
+                {isDropdownOpen && (
+                  <div
+                    className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
+                    onClick={() => setIsDropdownOpen(false)}
+                  />
+                )}
+
                 {/* Dropdown Menu Modal */}
                 <AnimatePresence>
                   {isDropdownOpen && (
@@ -239,29 +247,29 @@ export default function ClimateMonitoringPage() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.96 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-2xl bg-[var(--background-elevated)] backdrop-blur-xl border border-[var(--border-subtle)] shadow-2xl p-3 z-50 flex flex-col gap-2.5 max-h-[460px]"
+                      className="absolute right-0 top-full mt-2 w-80 sm:w-[400px] rounded-2xl bg-[#090f1f] border border-cyan-500/40 shadow-[0_25px_70px_rgba(0,0,0,0.98)] p-4 z-50 flex flex-col gap-3 max-h-[480px]"
                     >
                       {/* Search Bar */}
                       <div className="relative">
-                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400/70" />
                         <input
                           type="text"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           placeholder="Search 31 Karnataka Districts..."
                           autoFocus
-                          className="w-full pl-9 pr-3 py-2 text-xs bg-white/[0.05] border border-white/[0.08] focus:border-cyan-500/50 rounded-xl text-white placeholder-gray-500 outline-none transition-colors"
+                          className="w-full pl-9 pr-3 py-2.5 text-xs bg-[#121c35] border border-cyan-500/30 focus:border-cyan-400 rounded-xl text-white placeholder-gray-400 outline-none transition-colors shadow-inner"
                         />
                       </div>
 
                       {/* Header info */}
-                      <div className="flex items-center justify-between text-[11px] text-gray-400 px-1">
-                        <span>Select District ({filteredDistricts.length} found)</span>
-                        <span className="text-cyan-400 font-medium">All Karnataka</span>
+                      <div className="flex items-center justify-between text-[11px] text-gray-400 px-1 border-b border-white/[0.08] pb-2">
+                        <span className="font-medium text-gray-300">Select District ({filteredDistricts.length} found)</span>
+                        <span className="text-cyan-400 font-semibold px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/20">All Karnataka</span>
                       </div>
 
                       {/* District List Scrollable Area */}
-                      <div className="overflow-y-auto space-y-1 pr-1 custom-scrollbar max-h-[300px]">
+                      <div className="overflow-y-auto space-y-1.5 pr-1 custom-scrollbar max-h-[300px]">
                         {filteredDistricts.map((district) => {
                           const isSelected =
                             selectedDistrict.toLowerCase() === district.name.toLowerCase() ||
@@ -271,26 +279,26 @@ export default function ClimateMonitoringPage() {
                               key={district.name}
                               type="button"
                               onClick={() => handleSelectDistrict(district.name)}
-                              className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between transition-all duration-150 ${
+                              className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between transition-all duration-150 group ${
                                 isSelected
-                                  ? "bg-cyan-500/20 border border-cyan-500/40 text-cyan-200"
-                                  : "hover:bg-white/[0.04] border border-transparent text-gray-300"
+                                  ? "bg-cyan-500/25 border border-cyan-400/60 text-cyan-100 shadow-sm shadow-cyan-500/10"
+                                  : "bg-white/[0.02] hover:bg-white/[0.08] border border-white/[0.04] hover:border-white/10 text-gray-300"
                               }`}
                             >
-                              <div className="flex flex-col">
-                                <span className="font-semibold text-xs flex items-center gap-1.5 text-white">
+                              <div className="flex flex-col gap-0.5">
+                                <span className="font-bold text-xs flex items-center gap-1.5 text-white group-hover:text-cyan-300 transition-colors">
                                   {district.name}
                                   {isSelected && <Check className="w-3.5 h-3.5 text-cyan-400 shrink-0" />}
                                 </span>
-                                <span className="text-[10px] text-gray-500 truncate max-w-[210px]">
+                                <span className="text-[10px] text-gray-400 truncate max-w-[210px]">
                                   {district.mangoZone}
                                 </span>
                               </div>
-                              <div className="flex flex-col items-end">
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06] text-gray-400 font-mono">
+                              <div className="flex flex-col items-end gap-0.5 shrink-0">
+                                <span className="text-[10px] px-2 py-0.5 rounded bg-white/[0.08] text-gray-300 font-mono font-medium border border-white/[0.06]">
                                   {district.region}
                                 </span>
-                                <span className="text-[9px] text-gray-500 font-mono mt-0.5">
+                                <span className="text-[9px] text-gray-500 font-mono">
                                   {district.lat}°N, {district.lon}°E
                                 </span>
                               </div>
@@ -313,7 +321,7 @@ export default function ClimateMonitoringPage() {
         </StaggerItem>
 
         {/* Quick-Select Pills for Primary Mango Belts */}
-        <StaggerItem>
+        <StaggerItem className="relative z-10">
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
             <span className="text-xs font-semibold text-gray-400 flex items-center gap-1 shrink-0 mr-1">
               <Compass className="w-3.5 h-3.5 text-yellow-400" />
@@ -342,7 +350,7 @@ export default function ClimateMonitoringPage() {
         </StaggerItem>
 
         {/* District Agro-Zone Alert Banner */}
-        <StaggerItem>
+        <StaggerItem className="relative z-0">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs">
             <div className="flex items-center gap-2.5">
               <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
@@ -360,7 +368,7 @@ export default function ClimateMonitoringPage() {
         </StaggerItem>
 
         {/* Current Live Weather Conditions */}
-        <StaggerItem>
+        <StaggerItem className="relative z-0">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {[
               { label: term("Temperature"), value: curr.temp, unit: "°C", icon: Thermometer, color: "#f59e0b" },

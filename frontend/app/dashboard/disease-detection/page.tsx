@@ -359,21 +359,24 @@ export default function DiseaseDetectionPage() {
         setScanProgress(100);
         setScanStage(3);
 
+        const isRejected = res.status === "rejected" || res.is_mango_leaf === false || !res.disease;
         const result: CustomScanResult = {
-          is_mango_leaf: res.is_mango_leaf ?? res.disease !== "Non-Leaf Object Detected",
-          disease: res.disease,
-          confidence: res.confidence,
-          severity: res.severity,
-          treatment: res.treatment,
-          description: res.description,
+          is_mango_leaf: !isRejected,
+          disease: isRejected ? "Non-Mango Leaf Object Detected" : res.disease,
+          confidence: isRejected ? 0 : res.confidence,
+          severity: isRejected ? "None" : res.severity,
+          treatment: isRejected ? "N/A" : res.treatment,
+          description: res.description || (res as any).message || "Please upload a clear mango leaf image.",
         };
 
         setScanResult(result);
-        if (res.heatmap_b64) {
+        if (!isRejected && res.heatmap_b64) {
           setHeatmapB64(res.heatmap_b64.startsWith("data:") ? res.heatmap_b64 : `data:image/jpeg;base64,${res.heatmap_b64}`);
-        } else if (previewUrl) {
+        } else if (!isRejected && previewUrl) {
           const heatmap = await createVisualHeatmapOverlay(previewUrl);
           setHeatmapB64(heatmap);
+        } else {
+          setHeatmapB64(null);
         }
 
         if (result.is_mango_leaf) {
@@ -418,7 +421,12 @@ export default function DiseaseDetectionPage() {
   };
 
   const currentResult = scanResult as CustomScanResult | null;
-  const isInvalidLeaf = currentResult && (currentResult.is_mango_leaf === false || currentResult.disease === "Non-Leaf Object Detected");
+  const isInvalidLeaf = currentResult && (
+    currentResult.is_mango_leaf === false ||
+    !currentResult.disease ||
+    currentResult.disease === "Non-Leaf Object Detected" ||
+    currentResult.disease === "Non-Mango Leaf Object Detected"
+  );
   const isHealthy = currentResult?.disease === "Healthy";
 
   // Active disease protocol with full multi-lingual localization

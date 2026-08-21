@@ -9,6 +9,7 @@ import time
 from typing import Optional, List, Dict, Any
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Header, Depends
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import numpy as np
@@ -24,12 +25,20 @@ from dotenv import load_dotenv
 from litellm import Router
 
 from src.models.disease_cnn import MangoLeafXNetSE, MangoLeafXNet, MangoLeafXNetMultiTask
+from src.models.domain_gate import MangoDomainGate
 from src.models.yield_model import build_yield_dataset_monthly, prepare_Xy
 from src.economics import generate_report, EconomicReport, TREATMENT_COST
+from src.pipeline.mango_validator import (
+    predict_mango_disease_pipeline,
+    DISEASE_CLASSES,
+    DISEASE_DESCRIPTIONS,
+    disease_eval_transform
+)
 from backend import store
 from backend import climate
 from backend import recommendations
 from backend import auth
+from backend import config
 from backend.agent import mango_agent, AVAILABLE_MODELS, QUICK_PRESETS, build_live_platform_context
 
 load_dotenv()
@@ -58,6 +67,7 @@ active_tokens: Dict[str, Dict[str, Any]] = {}
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 model_disease = None
+model_domain_gate = None
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def get_disease_model():
@@ -88,6 +98,33 @@ def get_disease_model():
                 return model_disease
             except Exception as e:
                 print(f"Error loading model from {pt_path}: {e}")
+    return None
+
+def get_domain_gate_model():
+    global model_domain_gate
+    if model_domain_gate is not None:
+        return model_domain_gate
+
+    candidates = [
+        BASE_DIR / "models" / "mango_leaf_gate_best.pt",
+        Path("models/mango_leaf_gate_best.pt"),
+        BASE_DIR / "backend" / "models" / "mango_leaf_gate_best.pt",
+        Path("backend/models/mango_leaf_gate_best.pt"),
+    ]
+    for pt_path in candidates:
+        if pt_path.exists():
+            try:
+                print(f"Loading MangoDomainGate Model from {pt_path}...")
+                model = MangoDomainGate(pretrained=False).to(device)
+                checkpoint = torch.load(pt_path, map_location=device, weights_only=False)
+                state = checkpoint.get("model_state_dict", checkpoint)
+                model.load_state_dict(state)
+                model.eval()
+                model_domain_gate = model
+                print("Successfully loaded MangoDomainGate model!")
+                return model_domain_gate
+            except Exception as e:
+                print(f"Error loading domain gate model from {pt_path}: {e}")
     return None
 
 DISEASE_CLASSES = [
@@ -228,6 +265,13 @@ def startup_event():
     else:
         print("Notice: PyTorch model weights not found or failed to load. Will use vision fallback.")
 
+    # 1b. Load PyTorch Domain Gate Model
+    gate = get_domain_gate_model()
+    if gate is not None:
+        print("PyTorch MangoDomainGate model initialized!")
+    else:
+        print("Notice: Domain gate model weights not found. Will use rule-based spectrum guard.")
+
     # 2. LiteLLM Router Setup
     print("Initializing LiteLLM fallback router...")
     gemini_keys = []
@@ -330,6 +374,7 @@ class AgentChatRequest(BaseModel):
     model: Optional[str] = None
     apiKey: Optional[str] = None
     temperature: Optional[float] = 0.4
+    topic: Optional[str] = "all"
 
 class YieldSliderRequest(BaseModel):
     rainfall: float = 120.0
@@ -527,132 +572,41 @@ def logout_user(authorization: Optional[str] = Header(None)):
 async def predict_disease(file: UploadFile = File(...)):
     store.increment_inference_stat()
     contents = await file.read()
-    orig_b64 = base64.b64encode(contents).decode("utf-8")
+
+    model_d = get_disease_model()
+    model_g = get_domain_gate_model()
+
+    if model_d is None:
+        raise HTTPException(
+            status_code=500,
+            detail="PyTorch disease model weights could not be loaded. Please ensure models/multitask_best.pt exists."
+        )
 
     try:
-        image_pil = Image.open(BytesIO(contents)).convert("RGB")
-    except Exception:
-        return {
-            "is_mango_leaf": False,
-            "disease": "Invalid File Format",
-            "confidence": 0.0,
-            "severity": "None",
-            "severity_score": 0.0,
-            "treatment": "N/A",
-            "description": "The uploaded file is not a valid image format. Please upload a clear JPG, PNG, or WebP photo of a mango leaf.",
-            "heatmap_b64": orig_b64,
-        }
+        result = predict_mango_disease_pipeline(
+            image_bytes=contents,
+            disease_model=model_d,
+            domain_gate_model=model_g,
+            gradcam_generator_fn=generate_gradcam_base64,
+            device=device,
+            filename=file.filename or "leaf_scan.jpg"
+        )
 
-    # First Pass: Check visual features
-    is_leaf_pre, reason_pre, ratio_pre = check_mango_leaf_validity(image_pil, confidence=100.0)
-
-    if not is_leaf_pre and ("Textbook" in reason_pre or "Printed" in reason_pre or "Non-Plant" in reason_pre):
-        return {
-            "is_mango_leaf": False,
-            "disease": "Non-Leaf Object Detected",
-            "confidence": 0.0,
-            "severity": "None",
-            "severity_score": 0.0,
-            "treatment": "N/A — Non-mango leaf image uploaded.",
-            "description": f"AI Out-of-Distribution Guard ({reason_pre}): The uploaded image appears to be a non-leaf object (e.g. book page, text document, desk, paper, or background item). Please upload a clear photo of a mango leaf for disease diagnosis.",
-            "heatmap_b64": orig_b64,
-        }
-
-    # PyTorch CNN Model Inference
-    model = get_disease_model()
-    if model is None:
-        raise HTTPException(status_code=500, detail="PyTorch disease model weights could not be loaded. Please ensure models/multitask_best.pt exists.")
-
-    try:
-        # Direct PyTorch Evaluation on Clean Image (without contour crop distortion)
-        tensor_in = transform_eval(image_pil).unsqueeze(0).to(device)
-
-        with torch.no_grad():
-            out = model(tensor_in)
-            if isinstance(out, tuple):
-                cls_out, sev_out = out
-                sev_val = float(sev_out[0].item())
-            else:
-                cls_out = out
-                sev_val = None
-            
-            probs_raw = F.softmax(cls_out, dim=1)
-            pred_idx = torch.argmax(probs_raw, dim=1).item()
-            raw_conf = float(probs_raw[0, pred_idx].item()) * 100.0
-            
-            # Authentic confidence score (capped at 99.8% to appear realistic)
-            confidence = round(min(raw_conf, 99.8), 1)
-
-            # Severity computation
-            predicted_disease = DISEASE_CLASSES[pred_idx]
-            if predicted_disease == "Healthy":
-                severity_num = 0.0
-            elif sev_val is not None:
-                severity_num = min(max(sev_val, 0.8), 2.8)
-            else:
-                severity_map = {
-                    "Anthracnose": 2.4,
-                    "Bacterial Canker": 2.2,
-                    "Die Back": 2.5,
-                    "Cutting Weevil": 1.6,
-                    "Gall Midge": 1.5,
-                    "Powdery Mildew": 1.8,
-                    "Sooty Mould": 1.7,
-                }
-                severity_num = severity_map.get(predicted_disease, 1.8)
-
-        # Second Pass: Combine model confidence with OOD features
-        is_leaf_final, reason_final, _ = check_mango_leaf_validity(image_pil, confidence=confidence)
-
-        if not is_leaf_final:
-            return {
-                "is_mango_leaf": False,
-                "disease": "Non-Leaf Object Detected",
-                "confidence": confidence,
-                "severity": "None",
-                "severity_score": 0.0,
-                "treatment": "N/A — Non-leaf image uploaded.",
-                "description": f"AI Out-of-Distribution Guard ({reason_final}): The uploaded image does not pass our leaf authenticity check. Model confidence was {confidence}%. Please upload a clear photo of a mango leaf.",
-                "heatmap_b64": orig_b64,
-            }
-
-        predicted_disease = DISEASE_CLASSES[pred_idx]
-        
-        # Pathologist-grade Grad-CAM & Lesion Area Severity Analysis
-        heatmap_b64, sev_info = generate_gradcam_base64(image_pil, pred_idx, predicted_disease)
-        severity_cat = sev_info["severity_cat"]
-        severity_num = sev_info["severity_score"]
-        lesion_pct = sev_info.get("lesion_pct", 0.0)
-
-        treatment_info = TREATMENT_COST.get(predicted_disease, TREATMENT_COST["Healthy"])
-        treatment_str = f"Apply {treatment_info.get('chemical', 'treatment')} at {treatment_info.get('dosage', 'dosage')}."
-
-        result = {
-            "is_mango_leaf": True,
-            "disease": predicted_disease,
-            "confidence": confidence,
-            "severity": severity_cat,
-            "severity_score": round(severity_num, 2),
-            "lesion_pct": lesion_pct,
-            "treatment": treatment_str,
-            "description": DISEASE_DESCRIPTIONS.get(predicted_disease, ""),
-            "heatmap_b64": heatmap_b64,
-        }
-
-        store.add_scan_history({
-            "date": time.strftime("%Y-%m-%d"),
-            "image": file.filename or "leaf_scan.jpg",
-            "disease": predicted_disease,
-            "confidence": confidence,
-            "severity": severity_cat,
-        })
+        if result.get("is_mango_leaf") is True and result.get("status") == "success":
+            store.add_scan_history({
+                "date": time.strftime("%Y-%m-%d"),
+                "image": file.filename or "leaf_scan.jpg",
+                "disease": result.get("disease", "Unknown"),
+                "confidence": result.get("confidence", 0.0),
+                "severity": result.get("severity", "None"),
+            })
 
         return result
     except Exception as e:
         import traceback
         traceback.print_exc()
-        print(f"PyTorch inference exception: {e}")
-        raise HTTPException(status_code=500, detail=f"PyTorch disease inference failed: {str(e)}")
+        print(f"Prediction pipeline exception: {e}")
+        raise HTTPException(status_code=500, detail=f"Mango disease inference failed: {str(e)}")
 
 
 @app.get("/api/disease-detection/history")
@@ -825,6 +779,29 @@ def update_user_settings(data: Dict[str, Any]):
 # ──────────────────────────────────────────────
 # Agricultural AI Agent Endpoints
 # ──────────────────────────────────────────────
+@app.post("/api/agent/stream")
+def agent_stream(req: AgentChatRequest):
+    """Streams token chunks live using Server-Sent Events (SSE)."""
+    def event_stream():
+        try:
+            for chunk in mango_agent.stream_chat(
+                message=req.message,
+                history=req.history,
+                model=req.model,
+                custom_api_key=req.apiKey,
+                temperature=req.temperature or 0.4,
+                topic=req.topic or "all"
+            ):
+                yield f"data: {json.dumps(chunk)}\n\n"
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            err_payload = {"type": "error", "message": f"Streaming interrupted: {str(e)}"}
+            yield f"data: {json.dumps(err_payload)}\n\n"
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
 @app.post("/api/agent/chat")
 def agent_chat(req: AgentChatRequest):
     try:
@@ -833,12 +810,13 @@ def agent_chat(req: AgentChatRequest):
             history=req.history,
             model=req.model,
             custom_api_key=req.apiKey,
-            temperature=req.temperature or 0.4
+            temperature=req.temperature or 0.4,
+            topic=req.topic or "all"
         )
     except Exception as e:
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Agent reasoning failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Sorry, I couldn't process that request right now. Please try again.")
 
 
 @app.get("/api/agent/models")

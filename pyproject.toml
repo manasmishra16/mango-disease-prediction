@@ -10,6 +10,7 @@ dependencies = [
     "earthengine-api>=1.7.26",
     "fastapi[standard]>=0.115.0",
     "google-genai>=2.7.0",
+    "google-generativeai>=0.8.6",
     "litellm>=1.86.2",
     "matplotlib>=3.10.0",
     "numpy>=1.26.0",

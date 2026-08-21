@@ -6,13 +6,14 @@ import { cn } from "@/lib/utils";
 
 interface GlowButtonProps {
   children: ReactNode;
-  onClick?: () => void;
+  onClick?: (e?: any) => void;
   href?: string;
   variant?: "mango" | "neon" | "cyan" | "ghost" | "outline";
   size?: "sm" | "md" | "lg";
   className?: string;
   disabled?: boolean;
   type?: "button" | "submit";
+  title?: string;
 }
 
 const variantStyles = {
@@ -37,16 +38,18 @@ export function GlowButton({
   className = "",
   disabled = false,
   type = "button",
+  title,
 }: GlowButtonProps) {
   return (
     <motion.button
       type={type}
       onClick={onClick}
       disabled={disabled}
+      title={title}
       whileHover={{ scale: 1.015 }}
       whileTap={{ scale: 0.985 }}
       className={cn(
-        "relative inline-flex cursor-pointer items-center gap-2 rounded-xl font-semibold transition-all duration-200",
+        "relative inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-200",
         variantStyles[variant],
         sizeStyles[size],
         disabled && "opacity-50 cursor-not-allowed",
@@ -57,7 +60,7 @@ export function GlowButton({
       <span className="absolute inset-0 overflow-hidden rounded-xl">
         <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/8 to-transparent transition-transform duration-700 hover:translate-x-full" />
       </span>
-      <span className="relative z-10 flex items-center gap-2">{children}</span>
+      <span className="relative z-10 flex items-center justify-center gap-2">{children}</span>
     </motion.button>
   );
 }

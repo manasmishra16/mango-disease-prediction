@@ -1,53 +1,95 @@
 """
-MangoDL — Intelligent Agricultural AI Agent Engine
-Comprehensive Horticultural & Precision Agronomy Copilot for Mango Cultivation.
-Supports Gemini (Google GenAI / LiteLLM), Groq, OpenAI, Anthropic, OpenRouter, and Local Fallback.
+MangoDL — Production Multilingual Agricultural AI Agent Engine
+Powered by Google Gemini 2.5 Flash / Google GenAI SDK with multi-model fallback.
+Real-time conversational memory, streaming token delivery, and domain agronomy intelligence.
 """
 
 import os
 import re
 import time
 import json
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Generator
 from pathlib import Path
 from dotenv import load_dotenv
+
+# Google GenAI official SDK
+try:
+    from google import genai
+    from google.genai import types
+    HAS_GOOGLE_GENAI = True
+except ImportError:
+    HAS_GOOGLE_GENAI = False
+
 import litellm
 
 from backend import store
 from backend import climate
 from src.economics import TREATMENT_COST
 
-load_dotenv()
+# Load root .env explicitly
+ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=ENV_PATH, override=True)
 
 # Supported LLM Models
 AVAILABLE_MODELS = [
-    {"id": "gemini/gemini-2.5-flash", "name": "Gemini 2.5 Flash (Fast & Recommended)", "provider": "google"},
-    {"id": "gemini/gemini-2.0-flash", "name": "Gemini 2.0 Flash", "provider": "google"},
-    {"id": "gemini/gemini-1.5-pro", "name": "Gemini 1.5 Pro (Deep Agronomy)", "provider": "google"},
-    {"id": "groq/llama-3.3-70b-versatile", "name": "Groq LLaMA 3.3 70B (Ultra Fast)", "provider": "groq"},
+    {"id": "gemini/gemini-2.5-flash", "name": "Gemini 2.5 Flash (Recommended)", "provider": "google"},
+    {"id": "gemini/gemini-flash-latest", "name": "Gemini Flash Latest", "provider": "google"},
+    {"id": "gemini/gemini-3.5-flash-lite", "name": "Gemini 3.5 Flash-Lite (Fast)", "provider": "google"},
+    {"id": "gemini/gemini-3.1-pro-preview", "name": "Gemini 3.1 Pro (Deep Agronomy)", "provider": "google"},
+    {"id": "groq/llama-3.3-70b-versatile", "name": "Groq LLaMA 3.3 70B", "provider": "groq"},
     {"id": "openai/gpt-4o-mini", "name": "OpenAI GPT-4o Mini", "provider": "openai"},
     {"id": "openai/gpt-4o", "name": "OpenAI GPT-4o", "provider": "openai"},
     {"id": "anthropic/claude-3-5-sonnet-20241022", "name": "Claude 3.5 Sonnet", "provider": "anthropic"},
-    {"id": "openrouter/auto", "name": "OpenRouter Auto", "provider": "openrouter"},
     {"id": "offline/agronomy-expert", "name": "MangoDL Offline Agronomist (Zero-Key Local)", "provider": "offline"},
 ]
 
-# Quick Agronomic Preset Prompts
+# Quick Agronomic Preset Prompts for each topic panel
 QUICK_PRESETS = [
+    # Disease & Fungicides
     {
         "id": "anthracnose-treat",
-        "title": "Anthracnose Treatment Plan",
-        "prompt": "How do I treat severe Anthracnose infection on Banganapalli mango trees during high humidity?",
+        "title": "Anthracnose Spray Plan",
+        "prompt": "How do I treat severe Anthracnose infection on Banganapalli mango trees during high humidity (>80%)?",
         "category": "disease",
         "icon": "Microscope"
     },
     {
+        "id": "bacterial-canker-treat",
+        "title": "Bacterial Canker Protocol",
+        "prompt": "Recommend a combination bactericide and copper spray schedule for Bacterial Canker lesions with gummosis.",
+        "category": "disease",
+        "icon": "Microscope"
+    },
+    {
+        "id": "powdery-mildew-treat",
+        "title": "Powdery Mildew Control",
+        "prompt": "What is the optimal chemical and bio-fungicide spray schedule for Powdery Mildew during flowering stage?",
+        "category": "disease",
+        "icon": "Microscope"
+    },
+    # Drip Irrigation
+    {
         "id": "irrigation-schedule",
         "title": "Precision Irrigation Schedule",
-        "prompt": "Based on current temperature and humidity in Karnataka, what is the optimal drip irrigation schedule?",
+        "prompt": "Based on current temperature and humidity in Karnataka, what is the optimal daily drip irrigation schedule?",
         "category": "irrigation",
         "icon": "Droplets"
     },
+    {
+        "id": "irrigation-cutoff",
+        "title": "Pre-Harvest Water Cut-Off",
+        "prompt": "When should I cut off irrigation before harvesting Raspuri and Banganapalli to maximize sweetness (Brix) and prevent spongy tissue?",
+        "category": "irrigation",
+        "icon": "Droplets"
+    },
+    {
+        "id": "fertigation-protocol",
+        "title": "Drip Fertigation Protocol",
+        "prompt": "How to inject water-soluble SOP (0-0-50 Potassium Sulphate) and micronutrients through drip emitters for fruit sizing?",
+        "category": "irrigation",
+        "icon": "Droplets"
+    },
+    # Market & Pricing
     {
         "id": "market-vs-pulp",
         "title": "Market vs. Pulp Factory Strategy",
@@ -56,85 +98,109 @@ QUICK_PRESETS = [
         "icon": "DollarSign"
     },
     {
+        "id": "export-grading",
+        "title": "Export Quality Standards",
+        "prompt": "What are the blemish threshold and sizing standards to sell Alphonso mangoes for premium export vs local mandis?",
+        "category": "economics",
+        "icon": "DollarSign"
+    },
+    {
+        "id": "crop-loss-valuation",
+        "title": "Per-Acre Crop Loss Valuation",
+        "prompt": "Calculate estimated financial loss per acre if fungal Anthracnose is left untreated for 3 weeks in Hassan district.",
+        "category": "economics",
+        "icon": "DollarSign"
+    },
+    # NPK Nutrition
+    {
         "id": "fertilizer-npk",
         "title": "Post-Harvest NPK Formulation",
-        "prompt": "What is the recommended NPK and micronutrient dosage per hectare for Raspuri orchards post-harvest?",
+        "prompt": "What is the recommended NPK and farm yard manure dosage per bearing tree for Raspuri orchards post-harvest?",
         "category": "nutrition",
         "icon": "FlaskConical"
     },
     {
-        "id": "pest-powdery-mildew",
-        "title": "Powdery Mildew & Hopper Control",
-        "prompt": "Recommend an integrated pest and disease spray schedule for Powdery Mildew and Mango Leaf Hoppers.",
+        "id": "pre-bloom-boron",
+        "title": "Pre-Bloom Boron Spray",
+        "prompt": "How does Solubor (Boron 20%) foliar application prevent flower drop and improve fruit retention during panicle emergence?",
+        "category": "nutrition",
+        "icon": "FlaskConical"
+    },
+    {
+        "id": "micronutrient-zinc",
+        "title": "Zinc & Potassium Foliar Boost",
+        "prompt": "Recommend foliar Zinc Sulphate and Potassium Nitrate (13-0-45) dosages during the pea-sized fruit development stage.",
+        "category": "nutrition",
+        "icon": "FlaskConical"
+    },
+    # Pest Management
+    {
+        "id": "pest-hopper",
+        "title": "Mango Leaf Hopper IPM",
+        "prompt": "Recommend an integrated pest schedule for Mango Leaf Hoppers (Idioscopus clypealis) during flowering and panicle emergence.",
         "category": "pest",
         "icon": "Bug"
     },
     {
+        "id": "pest-gall-midge",
+        "title": "Gall Midge & Weevil Control",
+        "prompt": "How to eliminate Gall Midge warts on leaves and prevent Leaf Cutting Weevil defoliation during new vegetative flushes?",
+        "category": "pest",
+        "icon": "Bug"
+    },
+    {
+        "id": "pest-fruit-fly",
+        "title": "Fruit Fly Pheromone Traps",
+        "prompt": "When and how to deploy methyl eugenol pheromone traps and bait sprays for Mango Fruit Fly (Bactrocera dorsalis)?",
+        "category": "pest",
+        "icon": "Bug"
+    },
+    # Climate Defense
+    {
         "id": "heatwave-protection",
         "title": "Heat Stress & Sunburn Shield",
-        "prompt": "How to protect developing mango fruits from high temperature heat stress (>36°C) and sunburn?",
+        "prompt": "How to protect developing mango fruits from high temperature heat stress (>35°C) and sunburn using Kaolin clay foliar sprays?",
+        "category": "climate",
+        "icon": "CloudSun"
+    },
+    {
+        "id": "unseasonal-rain",
+        "title": "Unseasonal Rain Recovery",
+        "prompt": "What emergency soil drainage and post-rain systemic antifungal measures should I take after unseasonal heavy showers in Karnataka?",
         "category": "climate",
         "icon": "CloudSun"
     }
 ]
 
-# Agronomy Domain Expert Knowledge Base for Offline Fallback
-OFFLINE_KNOWLEDGE_BASE = {
-    "anthracnose": {
-        "disease": "Anthracnose (Colletotrichum gloeosporioides)",
-        "symptoms": "Dark brown to black necrotic spots on leaves, blossoms, and fruits; leaf blight and defoliation under high humidity (>80%).",
-        "chemical_treatment": "Spray Copper Oxychloride 50 WP (3 g/L) or Mancozeb 75 WP (2 g/L) during vegetative flush. For severe outbreaks, apply Carbendazim 50 WP (1 g/L) or Azoxystrobin 23 SC (1 mL/L).",
-        "organic_treatment": "Spray Neem seed kernel extract (NSKE 5%) or Pseudomonas fluorescens (5 g/L). Prune dead twigs and destroy fallen infected leaves.",
-        "spray_schedule": "First spray at new flush emergence; repeat at 14-day intervals if relative humidity exceeds 75%.",
-        "cost_est": "₹850 - ₹1,200 per acre per spray application."
+# Topic Directives
+TOPIC_SPECIALIZATIONS = {
+    "disease": {
+        "title": "Disease & Fungicides Specialist",
+        "context_directive": "The user is currently exploring Disease & Fungicides. Provide precise chemical formulations (e.g. Copper Oxychloride 50 WP, Mancozeb 75 WP, Hexaconazole, Streptocycline), biological controls (Trichoderma, Pseudomonas), and pre-harvest withholding periods."
     },
-    "powdery mildew": {
-        "disease": "Powdery Mildew (Oidium mangiferae)",
-        "symptoms": "White superficial powdery fungal coating on young leaves, panicles, and tender fruits causing blossom drop and fruit necrosis.",
-        "chemical_treatment": "Apply Wettable Sulphur 80 WP (3 g/L) or Hexaconazole 5 EC (1 mL/L) or Dinocap 48 EC (1 mL/L) at early infection.",
-        "organic_treatment": "Spray Ampelomyces quisqualis bio-fungicide (5 mL/L) or potassium bicarbonate (3 g/L).",
-        "spray_schedule": "Spray at panicle emergence, repeat after 10-14 days during flowering.",
-        "cost_est": "₹650 - ₹950 per acre."
+    "irrigation": {
+        "title": "Drip Irrigation & Water Hydraulics Specialist",
+        "context_directive": "The user is currently exploring Drip Irrigation & Water Hydraulics. Focus on daily water budgeting (L/tree/day), drip run-times, root zone soil moisture, and pre-harvest cutoff schedules to enhance sweetness (Brix)."
     },
-    "bacterial canker": {
-        "disease": "Bacterial Canker (Xanthomonas citri pv. mangiferaeindicae)",
-        "symptoms": "Water-soaked, angular black raised lesions with gum exudation on leaves and longitudinal cracks on branches.",
-        "chemical_treatment": "Spray Streptocycline (100 ppm = 1 g in 10 L water) combined with Copper Oxychloride 50 WP (3 g/L).",
-        "organic_treatment": "Bordeaux mixture (1%) application after post-harvest pruning.",
-        "spray_schedule": "Apply 3 sprays at 15-day intervals starting immediately upon initial symptom spotting.",
-        "cost_est": "₹1,100 - ₹1,450 per acre."
+    "economics": {
+        "title": "Agricultural Economics & Market Pricing Specialist",
+        "context_directive": "The user is currently exploring Market & Pricing. Provide market price breakdowns comparing fresh APMC Mandi rates vs. processing pulp factory deliveries, crop grading, and revenue per acre."
     },
-    "die back": {
-        "disease": "Die Back (Lasiodiplodia theobromae)",
-        "symptoms": "Drying of twigs from top downwards, brown discoloration, leaves turning dry and hanging on dead branches.",
-        "chemical_treatment": "Prune infected twigs 5-7 cm below dead tissue. Paint cut ends with Bordeaux paste (10%) or Copper Oxychloride paste. Spray Carbendazim (1 g/L).",
-        "organic_treatment": "Trichoderma harzianum soil drenching (10 g/L) around root zone.",
-        "spray_schedule": "Immediately after pruning in July-August and pre-flowering in November.",
-        "cost_est": "₹900 - ₹1,300 per acre."
+    "nutrition": {
+        "title": "Soil Science & NPK Nutrition Specialist",
+        "context_directive": "The user is currently exploring NPK Nutrition. Detail annual basal fertilizer requirements (1000g N : 500g P2O5 : 1000g K2O per bearing tree), FYM, Solubor Boron, and Zinc foliar sprays."
     },
-    "sooty mould": {
-        "disease": "Sooty Mould (Meliola mangiferae / Capnodium spp.)",
-        "symptoms": "Black velvety layer on leaf surface reducing photosynthesis; associated with honeydew-secreting hoppers or mealybugs.",
-        "chemical_treatment": "Spray Starch solution (20 g/L) which dries and flakes off the mould, combined with Imidacloprid 17.8 SL (0.3 mL/L) to eliminate insect vectors.",
-        "organic_treatment": "Fish oil rosin soap (25 g/L) or Neem oil 10,000 ppm (3 mL/L).",
-        "spray_schedule": "Two sprays at 12-day intervals.",
-        "cost_est": "₹750 - ₹1,050 per acre."
+    "pest": {
+        "title": "Integrated Pest Management (IPM) Specialist",
+        "context_directive": "The user is currently exploring Pest Management. Detail IPM controls for Leaf Hoppers, Gall Midge, Leaf Cutting Weevil, and Fruit Fly pheromone traps."
     },
-    "gall midge": {
-        "disease": "Gall Midge (Erosomyia indica)",
-        "symptoms": "Tiny wart-like galls on leaf veins, inflorescence malformation, and shoot tip distortion.",
-        "chemical_treatment": "Soil application of Chlorpyrifos 20 EC (2.5 mL/L) around tree basin; foliar spray of Thiamethoxam 25 WG (0.3 g/L).",
-        "organic_treatment": "Deep summer plowing of tree basin to expose pupae; install sticky light traps.",
-        "spray_schedule": "At new shoot flush and early bud burst.",
-        "cost_est": "₹800 - ₹1,150 per acre."
+    "climate": {
+        "title": "Climate Defense & Agro-Meteorology Specialist",
+        "context_directive": "The user is currently exploring Climate Defense. Provide guidance on heatwave protection with Kaolin clay (5%), drainage management after heavy rains, and canopy temperature reduction."
     },
-    "cutting weevil": {
-        "disease": "Mango Leaf Cutting Weevil (Deporaus marginatus)",
-        "symptoms": "Clean straight horizontal cuts across tender leaves causing defoliation of fresh flushes.",
-        "chemical_treatment": "Spray Lambda-cyhalothrin 5 EC (1 mL/L) or Quinalphos 25 EC (2 mL/L) during fresh flush.",
-        "organic_treatment": "Collect and destroy fallen leaf cuts; spray Beauveria bassiana (5 g/L).",
-        "spray_schedule": "Single spray when new flushes emerge in monsoon/spring.",
-        "cost_est": "₹600 - ₹850 per acre."
+    "all": {
+        "title": "Comprehensive Agricultural Intelligence & General AI Copilot",
+        "context_directive": "The user is in general mode. Answer any agricultural or general inquiry accurately and helpfully."
     }
 }
 
@@ -144,20 +210,16 @@ def build_live_platform_context() -> Dict[str, Any]:
     climate_data = climate.fetch_open_meteo_climate()
     curr_weather = climate_data.get("currentWeather", {})
     history = store.get_scan_history()
-    stats = store.get_operational_stats()
     
-    # Recent scans summary
     recent_scans = []
     for s in history[:5]:
         recent_scans.append(f"{s.get('disease')} ({s.get('severity')} severity, {s.get('confidence')}% conf, {s.get('date')})")
     
     recent_scans_str = "; ".join(recent_scans) if recent_scans else "No recent disease scans recorded"
-
-    # High severity count
     high_sev_count = len([s for s in history if s.get("severity") in ("High", "Medium")])
 
     return {
-        "location": "Karnataka Mango Belt (Hassan / Kolar / Ramanagara)",
+        "location": "Karnataka Mango Belt (Hassan / Kolar / Ramanagara / Srinivasapur)",
         "ambient_temp": curr_weather.get("temp", 32),
         "ambient_humidity": curr_weather.get("humidity", 78),
         "wind_speed": curr_weather.get("windSpeed", 12),
@@ -174,162 +236,199 @@ def build_live_platform_context() -> Dict[str, Any]:
     }
 
 
-def get_system_prompt(context: Dict[str, Any]) -> str:
-    return f"""You are 'MangoDL AI Copilot', an elite Senior Agricultural Scientist & Precision Horticulturist with 20+ years of domain expertise in Indian mango cultivation (specifically Karnataka varieties: Banganapalli, Raspuri, Totapuri, Alphonso, Neelam, Dasheri, Kesar, Mallika).
+def get_system_prompt(context: Dict[str, Any], topic: str = "all") -> str:
+    spec = TOPIC_SPECIALIZATIONS.get(topic, TOPIC_SPECIALIZATIONS["all"])
 
-You have live real-time access to the user's orchard IoT sensors, recent leaf disease computer vision scans, climate feeds, and economic modeling engines.
+    return f"""You are 'MangoDL AI Copilot', an intelligent multilingual conversational AI assistant integrated into an advanced Agricultural Decision-Support Dashboard for Karnataka Mango Orchards.
 
-=== LIVE ORCHARD & CLIMATE CONTEXT ===
-- Region: {context['location']}
-- Ambient Temperature: {context['ambient_temp']}°C
-- Relative Humidity: {context['ambient_humidity']}%
+=== GENERAL AI & HORTICULTURAL CAPABILITIES ===
+1. You are a versatile, highly intelligent conversational assistant. You can answer general questions (science, technology, math, history, coding, creative writing, economics, everyday advice) with clarity, precision, and depth.
+2. When the user asks about farming, mango cultivation, crop pathology, weather, irrigation, fertilizers, pests, or agricultural economics, provide elite agronomic advice calibrated for Karnataka orchards (Hassan, Kolar, Ramanagara, Chintamani, Srinivaspur).
+3. Active Dashboard Topic Focus: {spec['title']} ({spec['context_directive']}).
+   Note: Topic selection guides your context, but NEVER refuse or limit a user's question if they ask about other crops, general topics, or unrelated subjects.
+
+=== STRICT MULTILINGUAL LANGUAGE MATCHING RULES ===
+- ALWAYS detect the language and script used by the user in their message and RESPOND IN THE EXACT SAME LANGUAGE:
+  * English question → Respond in fluent English.
+  * Hindi (हिंदी) question (Devanagari script) → Respond in natural, polite Hindi (हिंदी).
+  * Kannada (ಕನ್ನಡ) question (Kannada script) → Respond in natural, accurate Kannada (ಕನ್ನಡ).
+  * Hinglish question (Hindi spoken words written in Roman/English alphabet, e.g. "mere aam ke ped mein kaale daag hain") → Respond in natural conversational Hinglish.
+  * Mixed Kannada-English question → Respond in natural conversational Kannada-English.
+- DO NOT automatically translate everything to English. The farmer must receive answers in their chosen language.
+- For technical chemical names in Hindi/Kannada responses (e.g. Copper Oxychloride 50 WP, Mancozeb), you may write the chemical name clearly with transliteration/English so the farmer can purchase it from an agro-dealer easily.
+
+=== LIVE ORCHARD TELEMETRY CONTEXT (AVAILABLE FOR FARMING QUERIES) ===
+- Location: {context['location']}
+- Ambient Temperature: {context['ambient_temp']}°C | Relative Humidity: {context['ambient_humidity']}%
 - Weather Condition: {context['weather_condition']} (Wind: {context['wind_speed']} km/h, UV: {context['uv_index']})
 - 48h Rain Forecast: {context['rainfall_forecast']}
-- Recent Computer Vision Leaf Scans: {context['recent_scans']}
-- Active Disease Alerts in Orchard: {context['active_disease_alerts']}
+- Recent Computer Vision Scans in Orchard: {context['recent_scans']}
+- Active Outbreak Alerts: {context['active_disease_alerts']}
 - Average Predicted Yield: {context['avg_yield_forecast']}
-- Current APMC Market Price: {context['current_market_price']} vs Pulp Factory Price: {context['pulp_factory_price']}
+- Current APMC Mandi Price: {context['current_market_price']} vs Pulp Factory Price: {context['pulp_factory_price']}
 
-=== YOUR CAPABILITIES & INSTRUCTIONS ===
-1. Provide actionable, high-precision agronomy guidance:
-   - Specific chemical active ingredients, trade names, and exact dosages per liter (e.g. Copper Oxychloride 50 WP @ 3g/L, Mancozeb @ 2g/L, Azoxystrobin @ 1mL/L).
-   - Eco-friendly biological controls (Trichoderma, Pseudomonas, Neem oil 10,000 ppm, NSKE).
-   - Precise drip irrigation schedules adjusting for current temperature ({context['ambient_temp']}°C) and humidity ({context['ambient_humidity']}%).
-   - Economic optimization: Help farmers calculate whether to sell Grade A/B fruits to APMC Fresh Market or divert damaged/Grade C crops to Pulp Processing factories.
-   - Varietal specific advice (flowering in Nov-Dec, harvesting in April-June for Banganapalli & Raspuri).
-2. Structure your answers cleanly with:
-   - 🌿 **Diagnosis & Analysis**
-   - 🧪 **Chemical & Biological Prescription** (Clear dosage table/bullet points)
-   - 💧 **Irrigation & Canopy Management**
-   - 💰 **Economic & Yield Impact Assessment**
-   - ⚠️ **Precaution & Withholding Period**
-3. Whenever relevant, output an actionable tool trigger at the very end on a new line in this format:
-   `[ACTION_CARD: {{"type": "prescription"|"irrigation"|"economics"|"disease_scan", "title": "...", "data": {{...}}}}]`
-4. Keep the tone authoritative, practical, encouraging, and farmer-centric. Support multilingual terms (Hindi, Kannada) when appropriate.
+=== STRICT ZERO-HALLUCINATION & FACTUAL INTEGRITY RULES ===
+1. NEVER invent, hallucinate, or guess facts, prices, weather forecasts, disease names, pesticide or chemical dosages, fertilizer formulas, government schemes, or market rates.
+2. If you do not have reliable or verified information on a question, clearly and politely state in the user's language:
+   "I don't have enough reliable information to answer this accurately." (or its natural translation in Hindi/Kannada).
+3. For agricultural advice where critical parameters are missing (e.g. crop age, mango variety, orchard location, acreage, soil type, or visual lesion symptoms), ask a concise follow-up question to obtain the necessary details rather than guessing.
+4. Distinguish between standard university-tested recommendations (such as ICAR, IIHR Bengaluru, UAS Dharwad/Bengaluru) and general guidelines.
+5. NEVER claim live data is real-time unless present in the provided telemetry context.
+
+=== RESPONSE FORMATTING & TONE ===
+- Use clean GitHub-Flavored Markdown: bolding, headings (##, ###), bullet points, and numbered lists.
+- Avoid robotic jargon. Be practical, concise, encouraging, and farmer-friendly.
+- When giving an agricultural prescription, if an actionable summary is helpful, you may append:
+  `[ACTION_CARD: {{"type": "prescription"|"irrigation"|"economics"|"disease_scan", "title": "...", "data": {{...}}}}]`
 """
-
-
-def generate_offline_response(user_message: str, context: Dict[str, Any]) -> str:
-    """Generates an intelligent, domain-expert response without external LLM API keys."""
-    msg_lower = user_message.lower()
-
-    # Match against known diseases
-    matched_disease = None
-    for k in OFFLINE_KNOWLEDGE_BASE:
-        if k in msg_lower:
-            matched_disease = OFFLINE_KNOWLEDGE_BASE[k]
-            break
-
-    if matched_disease:
-        return f"""### 🌿 Diagnosis & Treatment Prescription: {matched_disease['disease']}
-
-**Live Orchard Context:** Temperature: {context['ambient_temp']}°C | Humidity: {context['ambient_humidity']}% | Region: {context['location']}
-
-#### 🔍 Symptoms & Pathological Profile:
-{matched_disease['symptoms']}
-
-#### 🧪 Chemical Control Prescription:
-* **Active Formulation:** {matched_disease['chemical_treatment']}
-* **Spray Timing:** {matched_disease['spray_schedule']}
-* **Estimated Treatment Cost:** {matched_disease['cost_est']}
-
-#### 🌱 Biological & Cultural Management:
-* {matched_disease['organic_treatment']}
-* Maintain adequate canopy ventilation by pruning crossing and diseased branches after harvest.
-* Sanitize pruning shears with 1% sodium hypochlorite to avoid cross-tree transmission.
-
-#### 💧 Climate & Moisture Guidance:
-* At current humidity of **{context['ambient_humidity']}%**, spore germination pressure is elevated.
-* Avoid overhead sprinkler irrigation; maintain regulated drip irrigation in tree basins.
-
-#### 💰 Economic & Yield Protection:
-* Timely spray within 48 hours prevents **15% to 30% yield loss**, safeguarding up to **₹45,000 per hectare** in fresh market revenue.
-
-[ACTION_CARD: {{"type": "prescription", "title": "{matched_disease['disease']} Prescription", "data": {{"treatment": "{matched_disease['chemical_treatment'][:80]}...", "cost": "{matched_disease['cost_est']}", "urgency": "High" if context['ambient_humidity'] > 75 else "Medium"}}}}]"""
-
-    elif any(word in msg_lower for word in ["irrigation", "water", "drip", "moisture", "hassan"]):
-        return f"""### 💧 Precision Irrigation Advisory for Mango Orchards
-
-**Current Weather in {context['location']}:**
-* **Temperature:** {context['ambient_temp']}°C | **Humidity:** {context['ambient_humidity']}% | **Condition:** {context['weather_condition']}
-
-#### 📊 Recommended Irrigation Schedule:
-1. **Fruit Development Stage (Current):**
-   * **Water Requirement:** 45 - 60 Litres/tree/day for bearing trees (7-12 years old).
-   * **Drip Frequency:** Run 4L/hr online emitters for **3.5 hours every 2 days** in the morning (6:00 AM - 9:30 AM).
-2. **Vapor Pressure Deficit (VPD) Adjustment:**
-   * At {context['ambient_temp']}°C ambient temperature, evapotranspiration is moderate. Ensure soil moisture within the 15-45 cm root zone is kept at 65-75% field capacity.
-3. **Pre-Harvest Cut-off:**
-   * Stop all irrigation **12 to 15 days before harvest** for Banganapalli and Raspuri varieties to enhance TSS (Total Soluble Solids), fruit firmness, and shelf-life.
-
-#### 🚜 Nutrient Fertigation Tip:
-* Inject water-soluble **SOP (0-0-50 Potassium Sulphate)** @ 25g/tree via drip weekly to accelerate fruit sizing and vibrant skin coloration.
-
-[ACTION_CARD: {{"type": "irrigation", "title": "Drip Fertigation Schedule", "data": {{"litres_per_tree": "50 L/day", "cycle": "Morning 3.5h", "soil_moisture_target": "70%"}}}}]"""
-
-    elif any(word in msg_lower for word in ["market", "pulp", "revenue", "price", "economics", "profit", "sell"]):
-        return f"""### 💰 Economic Decision Model: Fresh APMC Market vs. Pulp Processing Factory
-
-**Current Pricing Indices:**
-* **APMC Fresh Market (Grade A/B):** {context['current_market_price']}
-* **Pulp Processing Factory (Grade C/Processing):** {context['pulp_factory_price']}
-* **Average Orchard Yield:** {context['avg_yield_forecast']}
-
-#### 📈 Revenue & Quality Optimization Logic:
-1. **Grade A/B Mangoes (Blemish < 10%):**
-   * **Expected Net Revenue:** **₹6.2 Lakhs / hectare** (based on 16.5 t/ha marketable yield @ ₹45.50/kg).
-   * **Channel:** Bengaluru / Kolar / APMC Mandi or direct exports.
-2. **Grade C / Disease-Affected (< 30% Anthracnose / Thrips surface marking):**
-   * **Expected Net Revenue:** **₹2.8 Lakhs / hectare** (based on sale to Chittoor / Krishnagiri Pulp Processing Units @ ₹28.00/kg).
-   * **Recommendation:** Segregate healthy fruits during harvest. Never mix diseased/surface-marked fruits with Grade A crates to avoid crate rejection at mandis.
-
-#### 💡 Actionable Decision:
-With your current orchard disease risk score, diverting only **Grade C** cull fruits to pulp factories while packaging **Grade A** for premium city markets delivers a **+22.4% overall profit boost**.
-
-[ACTION_CARD: {{"type": "economics", "title": "Revenue Optimization Matrix", "data": {{"market_net": "₹6.2L/ha", "pulp_net": "₹2.8L/ha", "recommendation": "Selective Grading & Multi-Channel Sale"}}}}]"""
-
-    elif any(word in msg_lower for word in ["fertilizer", "npk", "nutrition", "manure", "zinc", "boron"]):
-        return f"""### 🧪 Mango Nutritional Management & NPK Schedule
-
-**Recommended Formulations for Karnataka Orchards (Bearing Tree 8+ Years):**
-
-#### 1. Annual Basal Application (Post-Harvest July-August):
-* **Farm Yard Manure (FYM):** 40 - 50 kg per tree.
-* **Nitrogen (N):** 1,000 g (Urea: ~2.2 kg).
-* **Phosphorus (P₂O₅):** 500 g (Single Super Phosphate / SSP: ~3.1 kg).
-* **Potassium (K₂O):** 1,000 g (Muriate of Potash / MOP: ~1.7 kg).
-
-#### 2. Micronutrient Foliar Sprays:
-* **Pre-Flowering (October):** Spray **Solubor (Boron 20%) @ 1 g/L** to prevent flower drop and enhance fruit set.
-* **Pea-Sized Fruit Stage (March):** Spray **Zinc Sulphate 0.5% (5 g/L) + Potassium Nitrate (13-0-45) @ 10 g/L** to stimulate rapid fruit development.
-
-#### 🚜 Tree Basin Ring Method:
-* Apply fertilizers in a trench 15 cm deep at a radial distance of **1.5 to 2.0 meters from trunk** (drip line) and irrigate immediately.
-
-[ACTION_CARD: {{"type": "prescription", "title": "NPK & Micronutrient Plan", "data": {{"npk_ratio": "1000:500:1000 g/tree", "boron": "1 g/L pre-bloom", "potassium": "10 g/L fruit set"}}}}]"""
-
-    else:
-        return f"""### 🌿 MangoDL AI Copilot — Agricultural Intelligence Advisory
-
-Hello! I am your **MangoDL Agronomy AI Copilot**. I have analyzed your orchard in **{context['location']}**.
-
-**Live Climate & Orchard Health Overview:**
-* **Ambient Conditions:** {context['ambient_temp']}°C, {context['ambient_humidity']}% Relative Humidity ({context['weather_condition']})
-* **Disease Outbreak Level:** {context['active_disease_alerts']} active alerts in recent scans
-* **Yield Expectation:** {context['avg_yield_forecast']} across Karnataka varieties
-
-#### 🌟 How I Can Assist Your Orchard Operations:
-1. **Disease & Pest Prescriptions:** Upload leaf symptoms for Anthracnose, Powdery Mildew, Die Back, Bacterial Canker, or Gall Midge chemical/organic control.
-2. **Precision Drip Fertigation:** Custom water volume (L/tree/day) and NPK schedules tailored to Hassan & Kolar micro-climates.
-3. **Yield & Economic Forecasting:** Profit modeling comparing APMC Fresh Market vs. Pulp Factory sales.
-4. **Climate Resilience:** Kaolin clay spray protocols for heat stress and emergency drainage after unseasonal showers.
-
-*Feel free to ask a specific question or select any suggested prompt below!*"""
 
 
 class MangoAIAgent:
     def __init__(self):
         self.default_model = "gemini/gemini-2.5-flash"
+
+    def _get_api_key(self, model: str, custom_api_key: Optional[str] = None) -> Optional[str]:
+        if custom_api_key and custom_api_key.strip():
+            return custom_api_key.strip()
+        
+        # Ensure fresh load from .env
+        load_dotenv(dotenv_path=ENV_PATH, override=True)
+
+        # Look for environment keys
+        if "gemini" in model.lower():
+            return os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        elif "groq" in model.lower():
+            return os.getenv("GROQ_API_KEY")
+        elif "openai" in model.lower():
+            return os.getenv("OPENAI_API_KEY")
+        elif "anthropic" in model.lower():
+            return os.getenv("ANTHROPIC_API_KEY")
+        
+        # Fallback to general keys
+        return os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or os.getenv("OPENAI_API_KEY")
+
+    def _call_gemini_sdk(
+        self,
+        message: str,
+        history: Optional[List[Dict[str, str]]] = None,
+        api_key: Optional[str] = None,
+        sys_prompt: str = "",
+        model_name: str = "gemini-2.5-flash",
+        temperature: float = 0.4
+    ) -> Optional[str]:
+        """Calls official Google GenAI Client with seamless multi-model fallback."""
+        if not HAS_GOOGLE_GENAI or not api_key:
+            return None
+
+        candidate_models = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-3.5-flash-lite", "gemini-3.1-pro-preview", "gemini-pro-latest"]
+        clean_req = model_name.replace("gemini/", "").strip()
+        ordered_models = [clean_req] + [m for m in candidate_models if m != clean_req]
+
+        try:
+            client = genai.Client(api_key=api_key)
+            
+            # Format history for Gemini SDK
+            gemini_contents = []
+            if history:
+                for h in history[-8:]:
+                    r = h.get("role", "user")
+                    c = h.get("content", "").strip()
+                    if c:
+                        gemini_role = "user" if r == "user" else "model"
+                        gemini_contents.append(types.Content(
+                            role=gemini_role,
+                            parts=[types.Part.from_text(text=c)]
+                        ))
+
+            gemini_contents.append(types.Content(
+                role="user",
+                parts=[types.Part.from_text(text=message)]
+            ))
+
+            config = types.GenerateContentConfig(
+                system_instruction=sys_prompt,
+                temperature=temperature,
+                max_output_tokens=2048,
+            )
+
+            for model_to_try in ordered_models:
+                try:
+                    response = client.models.generate_content(
+                        model=model_to_try,
+                        contents=gemini_contents,
+                        config=config,
+                    )
+                    if response and response.text:
+                        return response.text.strip()
+                except Exception as e:
+                    print(f"[MangoAIAgent] Model {model_to_try} notice: {e}")
+                    time.sleep(1.0)
+        except Exception as e:
+            print(f"[MangoAIAgent] Client initialization error: {e}")
+
+        return None
+
+    def _stream_gemini_sdk(
+        self,
+        message: str,
+        history: Optional[List[Dict[str, str]]] = None,
+        api_key: Optional[str] = None,
+        sys_prompt: str = "",
+        model_name: str = "gemini-2.5-flash",
+        temperature: float = 0.4
+    ) -> Generator[str, None, None]:
+        """Streams tokens from official Google GenAI Client with multi-model failover."""
+        if not HAS_GOOGLE_GENAI or not api_key:
+            return
+
+        candidate_models = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-3.5-flash-lite", "gemini-3.1-pro-preview", "gemini-pro-latest"]
+        clean_req = model_name.replace("gemini/", "").strip()
+        ordered_models = [clean_req] + [m for m in candidate_models if m != clean_req]
+
+        try:
+            client = genai.Client(api_key=api_key)
+            
+            gemini_contents = []
+            if history:
+                for h in history[-8:]:
+                    r = h.get("role", "user")
+                    c = h.get("content", "").strip()
+                    if c:
+                        gemini_role = "user" if r == "user" else "model"
+                        gemini_contents.append(types.Content(
+                            role=gemini_role,
+                            parts=[types.Part.from_text(text=c)]
+                        ))
+
+            gemini_contents.append(types.Content(
+                role="user",
+                parts=[types.Part.from_text(text=message)]
+            ))
+
+            config = types.GenerateContentConfig(
+                system_instruction=sys_prompt,
+                temperature=temperature,
+                max_output_tokens=2048,
+            )
+
+            for model_to_try in ordered_models:
+                streamed = False
+                try:
+                    for chunk in client.models.generate_content_stream(
+                        model=model_to_try,
+                        contents=gemini_contents,
+                        config=config,
+                    ):
+                        if chunk.text:
+                            streamed = True
+                            yield chunk.text
+                    if streamed:
+                        return
+                except Exception as e:
+                    print(f"[MangoAIAgent] Stream model {model_to_try} failed: {e}")
+                    time.sleep(1.0)
+        except Exception as e:
+            print(f"[MangoAIAgent] Stream initialization error: {e}")
 
     def chat(
         self,
@@ -337,105 +436,111 @@ class MangoAIAgent:
         history: Optional[List[Dict[str, str]]] = None,
         model: Optional[str] = None,
         custom_api_key: Optional[str] = None,
-        temperature: float = 0.4
+        temperature: float = 0.4,
+        topic: str = "all"
     ) -> Dict[str, Any]:
-        """
-        Executes an interactive chat turn with multi-LLM support and fallback.
-        """
+        """Executes a non-streaming chat turn with Gemini SDK and multi-provider fallback."""
         start_time = time.time()
         context = build_live_platform_context()
-        sys_prompt = get_system_prompt(context)
-        
-        # Prepare messages
-        messages = [{"role": "system", "content": sys_prompt}]
-        if history:
-            for item in history[-8:]:  # keep last 8 messages for context
-                r = item.get("role", "user")
-                c = item.get("content", "")
-                if r in ("user", "assistant") and c:
-                    messages.append({"role": r, "content": c})
-        
-        messages.append({"role": "user", "content": message})
-
+        sys_prompt = get_system_prompt(context, topic=topic)
         selected_model = model or self.default_model
+
+        api_key = self._get_api_key(selected_model, custom_api_key)
         response_text = ""
-        source = "llm"
+        source = "gemini_genai_live"
         model_used = selected_model
 
-        # Check for user-provided key or environment keys
-        api_key = custom_api_key
-        if not api_key:
-            if "gemini" in selected_model:
-                api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-            elif "groq" in selected_model:
-                api_key = os.getenv("GROQ_API_KEY")
-            elif "openai" in selected_model:
-                api_key = os.getenv("OPENAI_API_KEY")
-            elif "anthropic" in selected_model:
-                api_key = os.getenv("ANTHROPIC_API_KEY")
+        # 1. Try Primary Google GenAI SDK if it is a Gemini model
+        if "gemini" in selected_model.lower() and api_key:
+            for attempt in range(2):
+                try:
+                    response_text = self._call_gemini_sdk(
+                        message=message,
+                        history=history,
+                        api_key=api_key,
+                        sys_prompt=sys_prompt,
+                        model_name=selected_model,
+                        temperature=temperature
+                    )
+                    if response_text:
+                        break
+                except Exception as e:
+                    if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                        time.sleep(2.0)
+                    else:
+                        break
 
-        # 1. Try Primary LLM Completion
-        if selected_model != "offline/agronomy-expert":
+        # 2. Try Fallback Gemini Models if primary returned empty
+        if not response_text and api_key:
+            active_fallbacks = ["gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-2.5-pro"]
+            for fb_m in active_fallbacks:
+                if fb_m not in selected_model.lower():
+                    try:
+                        time.sleep(1.0)
+                        response_text = self._call_gemini_sdk(
+                            message=message,
+                            history=history,
+                            api_key=api_key,
+                            sys_prompt=sys_prompt,
+                            model_name=fb_m,
+                            temperature=temperature
+                        )
+                        if response_text:
+                            source = f"gemini_fallback_{fb_m}"
+                            model_used = fb_m
+                            break
+                    except Exception as fb_err:
+                        print(f"[MangoAIAgent] Fallback {fb_m} notice: {fb_err}")
+
+        # 3. Try litellm if GenAI SDK wasn't used or returned empty
+        if not response_text and selected_model != "offline/agronomy-expert":
+            messages = [{"role": "system", "content": sys_prompt}]
+            if history:
+                for item in history[-8:]:
+                    r = item.get("role", "user")
+                    c = item.get("content", "")
+                    if r in ("user", "assistant") and c:
+                        messages.append({"role": r, "content": c})
+            messages.append({"role": "user", "content": message})
+
             try:
-                # Format litellm params
                 litellm_kwargs = {
                     "model": selected_model,
                     "messages": messages,
                     "temperature": temperature,
-                    "max_tokens": 1200,
+                    "max_tokens": 1500,
                 }
                 if api_key:
                     litellm_kwargs["api_key"] = api_key
-
                 resp = litellm.completion(**litellm_kwargs)
                 response_text = resp.choices[0].message.content or ""
-                source = "llm_live"
+                source = "litellm_live"
             except Exception as e:
-                print(f"[MangoAgent] LLM completion failed with model {selected_model}: {e}")
-                
-                # 2. Try Fallback Gemini Models if primary was something else
-                fallback_models = ["gemini/gemini-2.5-flash", "gemini/gemini-2.0-flash", "gemini/gemini-1.5-flash"]
-                for fb_m in fallback_models:
-                    if fb_m != selected_model:
-                        try:
-                            gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-                            fb_kwargs = {
-                                "model": fb_m,
-                                "messages": messages,
-                                "temperature": temperature,
-                                "max_tokens": 1200,
-                            }
-                            if gemini_key:
-                                fb_kwargs["api_key"] = gemini_key
-                            resp = litellm.completion(**fb_kwargs)
-                            response_text = resp.choices[0].message.content or ""
-                            source = "llm_fallback"
-                            model_used = fb_m
-                            break
-                        except Exception as fb_err:
-                            print(f"[MangoAgent] Fallback model {fb_m} failed: {fb_err}")
+                print(f"[MangoAIAgent] LiteLLM call error: {e}")
 
-        # 3. If all LLMs fail or offline model was explicitly chosen, use Expert Knowledge Engine
+        # 4. Final safety fallback: If no API key or network is unreachable
         if not response_text:
-            response_text = generate_offline_response(message, context)
-            source = "agronomy_expert_engine"
-            model_used = "MangoDL Offline Agronomist Engine"
+            response_text = (
+                "### 🌿 MangoDL AI Copilot\n\n"
+                "I am ready to assist you! To enable real-time Gemini LLM generation, please ensure your **`GEMINI_API_KEY`** "
+                "is configured in your environment or enter your API key in the settings sidebar on the right.\n\n"
+                "You can also select the offline local agronomy engine."
+            )
+            source = "offline_notice"
+            model_used = "MangoDL Local"
 
-        # Parse any action card tag from response
+        # Parse action cards
         action_data = None
         action_match = re.search(r'\[ACTION_CARD:\s*(\{.*?\})\]', response_text, re.DOTALL)
         if action_match:
             try:
                 action_data = json.loads(action_match.group(1))
-                # Remove the raw action tag from display response
                 response_text = response_text.replace(action_match.group(0), "").strip()
-            except Exception as e:
-                print(f"Action card parse notice: {e}")
+            except Exception:
+                pass
 
         latency = round((time.time() - start_time) * 1000, 1)
-
-        # Generate contextual followup questions
-        followup_questions = self._get_followups(message, response_text)
+        followup_questions = self._get_followups(message, topic=topic)
 
         return {
             "response": response_text,
@@ -443,41 +548,134 @@ class MangoAIAgent:
             "source": source,
             "modelUsed": model_used,
             "latencyMs": latency,
-            "context": {
-                "temp": context["ambient_temp"],
-                "humidity": context["ambient_humidity"],
-                "activeAlerts": context["active_disease_alerts"]
-            },
             "suggestedQuestions": followup_questions
         }
 
-    def _get_followups(self, user_msg: str, response: str) -> List[str]:
+    def stream_chat(
+        self,
+        message: str,
+        history: Optional[List[Dict[str, str]]] = None,
+        model: Optional[str] = None,
+        custom_api_key: Optional[str] = None,
+        temperature: float = 0.4,
+        topic: str = "all"
+    ) -> Generator[Dict[str, Any], None, None]:
+        """Streams tokens in real-time as Server-Sent Events."""
+        context = build_live_platform_context()
+        sys_prompt = get_system_prompt(context, topic=topic)
+        selected_model = model or self.default_model
+        api_key = self._get_api_key(selected_model, custom_api_key)
+
+        yield {
+            "type": "start",
+            "modelUsed": selected_model,
+            "topic": topic
+        }
+
+        full_text = ""
+        streamed_any = False
+
+        if "gemini" in selected_model.lower() and api_key and HAS_GOOGLE_GENAI:
+            try:
+                for token in self._stream_gemini_sdk(
+                    message=message,
+                    history=history,
+                    api_key=api_key,
+                    sys_prompt=sys_prompt,
+                    model_name=selected_model,
+                    temperature=temperature
+                ):
+                    full_text += token
+                    streamed_any = True
+                    yield {
+                        "type": "token",
+                        "content": token
+                    }
+            except Exception as e:
+                print(f"[MangoAIAgent] Stream error: {e}")
+
+        # If streaming was not supported or failed, run standard chat
+        if not streamed_any:
+            res = self.chat(
+                message=message,
+                history=history,
+                model=selected_model,
+                custom_api_key=custom_api_key,
+                temperature=temperature,
+                topic=topic
+            )
+            full_text = res["response"]
+            # Emit token
+            yield {
+                "type": "token",
+                "content": full_text
+            }
+
+        # Parse action card from full text
+        action_data = None
+        action_match = re.search(r'\[ACTION_CARD:\s*(\{.*?\})\]', full_text, re.DOTALL)
+        if action_match:
+            try:
+                action_data = json.loads(action_match.group(1))
+            except Exception:
+                pass
+
+        followups = self._get_followups(message, topic=topic)
+
+        yield {
+            "type": "meta",
+            "action": action_data,
+            "suggestedQuestions": followups,
+            "modelUsed": selected_model
+        }
+
+        yield {"type": "done"}
+
+    def _get_followups(self, user_msg: str, topic: str = "all") -> List[str]:
         msg = user_msg.lower()
-        if "anthracnose" in msg or "fungus" in msg:
+        if topic == "disease" or "anthracnose" in msg or "fungus" in msg or "canker" in msg or "daag" in msg or "kale" in msg:
             return [
-                "What is the withholding period before harvest?",
-                "How to apply bio-fungicide Pseudomonas fluorescens?",
-                "Calculate chemical fungicide cost for 10 acres"
+                "What is the withholding period (PHI) before harvest for Copper Oxychloride?",
+                "How to apply bio-fungicide Pseudomonas fluorescens during rain?",
+                "Calculate chemical spray dosage for 50 bearing trees"
             ]
-        elif "irrigation" in msg or "water" in msg:
+        elif topic == "irrigation" or "water" in msg or "drip" in msg or "paani" in msg or "neeru" in msg:
             return [
-                "How does soil moisture affect TSS and fruit sweetness?",
+                "How does soil moisture affect fruit sweetness (TSS Brix)?",
                 "When to stop watering before Banganapalli harvest?",
-                "Can I fertigate NPK with drip irrigation?"
+                "Can I inject water-soluble fertilizer via drip?"
             ]
-        elif "market" in msg or "price" in msg or "revenue" in msg:
+        elif topic == "economics" or "market" in msg or "price" in msg or "mandi" in msg or "pulp" in msg:
             return [
                 "What are the transport logistics costs to APMC Mandi?",
-                "How to grade mangoes for export standards?",
-                "Calculate net profit for 25 hectares"
+                "How to grade Alphonso mangoes for export standards?",
+                "Calculate net profit comparison for 10 acres"
+            ]
+        elif topic == "nutrition" or "fertilizer" in msg or "npk" in msg or "khad" in msg or "gobbarada" in msg:
+            return [
+                "What are the symptoms of Boron deficiency in mango blossoms?",
+                "How to prepare a circular ring trench for fertilizer?",
+                "Can Zinc Sulphate be tank-mixed with fungicide?"
+            ]
+        elif topic == "pest" or "pest" in msg or "hopper" in msg or "keeda" in msg or "hula" in msg:
+            return [
+                "How many pheromone traps per acre are needed for Fruit Fly?",
+                "What is the best spray for Leaf Hoppers before bloom?",
+                "How to control stem borer larvae in tree trunks?"
+            ]
+        elif topic == "climate" or "heat" in msg or "sunburn" in msg or "rain" in msg:
+            return [
+                "How often should Kaolin clay be reapplied after rainfall?",
+                "What is the ideal soil moisture during a 38°C heatwave?",
+                "How to protect orchard from unseasonal storm rain?"
             ]
         else:
             return [
-                "What is the best fungicide for Powdery Mildew?",
-                "How to prevent heat stress in young orchards?",
-                "Recommend NPK dosage for Karnataka varieties"
+                "Which fertilizer schedule is best for mango orchards?",
+                "How to protect mango leaves from fungal black spots?",
+                "Compare revenue: Fresh APMC Mandi vs. Pulp Factory"
             ]
 
 
-# Singleton Agent Instance
+# Singleton instance
 mango_agent = MangoAIAgent()

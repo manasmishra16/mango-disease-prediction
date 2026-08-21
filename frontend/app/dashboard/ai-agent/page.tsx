@@ -32,13 +32,19 @@ import {
   Cpu,
   RefreshCw,
   ExternalLink,
+  Mic,
+  MicOff,
+  Square,
+  Globe,
 } from "lucide-react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlowButton } from "@/components/ui/glow-button";
 import { NeonBadge } from "@/components/ui/neon-badge";
 import { PageTransition } from "@/components/animations/page-transition";
+import { MarkdownMessage } from "@/components/ui/markdown-message";
 import {
   sendAgentMessage,
+  streamAgentMessage,
   getAgentModels,
   getAgentPresets,
   getAgentStatus,
@@ -60,8 +66,9 @@ I am your **Precision Horticultural Agronomist & AI Decision Engine**, calibrate
 * 🔬 **Phase 3 Multi-Task CNN**: Real-time leaf pathology & severity score coupling.
 * 📈 **Phase 4 XGBoost + LSTM**: NASA POWER climate & satellite vegetation index yield forecast.
 * 💰 **Phase 5 Revenue Model**: APMC Mandi Fresh Market vs. Processing Pulp Factory price optimization.
+* 🎤 **Multilingual Voice Recognition**: Speak your questions in **English**, **हिंदी (Hindi)**, or **ಕನ್ನಡ (Kannada)** using the microphone button below.
 
-*Ask any agronomic question, request a treatment dosage calculation, or pick from the suggested topics below.*`,
+*Ask any agronomic question, speak your query, or pick from the suggested topics below.*`,
   modelUsed: "Gemini 2.5 Flash / MangoDL Agronomy Engine",
   timestamp: "Live",
   suggestedQuestions: [
@@ -78,6 +85,7 @@ export default function AIAgentPage() {
   const [messages, setMessages] = useState<AgentChatMessage[]>([defaultWelcomeMessage]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
   const [models, setModels] = useState<AgentModelInfo[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>("gemini/gemini-2.5-flash");
   const [customApiKey, setCustomApiKey] = useState<string>("");
@@ -86,13 +94,46 @@ export default function AIAgentPage() {
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [ttsEnabled, setTtsEnabled] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speakingMsgIndex, setSpeakingMsgIndex] = useState<number | null>(null);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [showKeyInput, setShowKeyInput] = useState(false);
   const [keyInputVal, setKeyInputVal] = useState("");
   const [testKeySuccess, setTestKeySuccess] = useState<boolean | null>(null);
 
+  // Real Speech Recognition States
+  const [isListening, setIsListening] = useState(false);
+  const [voiceLang, setVoiceLang] = useState<"en-IN" | "hi-IN" | "kn-IN">("en-IN");
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const recognitionRef = useRef<any>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const streamingTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load available speech synthesis voices proactively
+  useEffect(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+    const loadVoices = () => {
+      try {
+        const vList = window.speechSynthesis.getVoices();
+        if (vList && vList.length > 0) {
+          setVoices(vList);
+        }
+      } catch (e) {}
+    };
+
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+
+    return () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     // Load local storage
@@ -104,6 +145,10 @@ export default function AIAgentPage() {
       }
       const savedModel = localStorage.getItem("mangodl_selected_model");
       if (savedModel) setSelectedModel(savedModel);
+      const savedVoiceLang = localStorage.getItem("mangodl_voice_lang");
+      if (savedVoiceLang && (savedVoiceLang === "en-IN" || savedVoiceLang === "hi-IN" || savedVoiceLang === "kn-IN")) {
+        setVoiceLang(savedVoiceLang as any);
+      }
     }
 
     // Fetch Models
@@ -131,15 +176,118 @@ export default function AIAgentPage() {
         if (res) setAgentStatus(res);
       })
       .catch(() => {});
+
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch (e) {}
+      }
+      if (streamingTimerRef.current) {
+        clearInterval(streamingTimerRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isLoading]);
+  }, [messages, isLoading, isStreaming]);
+
+  // Real Speech Recognition Controller
+  const startListening = () => {
+    setVoiceError(null);
+    if (typeof window === "undefined") return;
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setVoiceError("Your browser does not support live speech recognition. Please use Google Chrome, Microsoft Edge, or a Web Speech-compatible browser.");
+      return;
+    }
+
+    try {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch (e) {}
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = voiceLang;
+
+      let baseText = inputValue.trim();
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        setVoiceError(null);
+      };
+
+      recognition.onresult = (event: any) => {
+        let interim = "";
+        let final = "";
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            final += transcript + " ";
+          } else {
+            interim += transcript;
+          }
+        }
+
+        if (final) {
+          baseText = (baseText ? baseText + " " : "") + final.trim();
+          setInputValue(baseText);
+        } else if (interim) {
+          const preview = baseText ? `${baseText} ${interim}` : interim;
+          setInputValue(preview);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn("Speech recognition notice:", event.error);
+        if (event.error === "not-allowed" || event.error === "permission-denied") {
+          setVoiceError("Microphone permission is required. Please click the camera/mic icon in your browser address bar to allow access.");
+        } else if (event.error === "no-speech") {
+          // User paused silently
+        } else if (event.error === "audio-capture") {
+          setVoiceError("No microphone was detected on your device. Please plug in a microphone.");
+        } else if (event.error === "network") {
+          setVoiceError("Network issue during speech recognition. Please check your internet connection.");
+        } else {
+          setVoiceError(`Voice input stopped (${event.error}). Click the mic to start again.`);
+        }
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (e: any) {
+      console.error("Speech recognition start failed:", e);
+      setVoiceError("Could not access microphone: " + (e?.message || "Check device permissions"));
+      setIsListening(false);
+    }
+  };
+
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {}
+    }
+    setIsListening(false);
+  };
 
   const handleSendMessage = async (textToSend?: string) => {
+    if (isListening) stopListening();
+
     const text = textToSend || inputValue;
-    if (!text.trim() || isLoading) return;
+    if (!text.trim() || isLoading || isStreaming) return;
 
     const userMsg: AgentChatMessage = {
       role: "user",
@@ -147,73 +295,231 @@ export default function AIAgentPage() {
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    const nextMessages = [...messages, userMsg];
+    setMessages(nextMessages);
     setInputValue("");
     setIsLoading(true);
+    setIsStreaming(true);
+
+    const placeholderMsg: AgentChatMessage = {
+      role: "assistant",
+      content: "",
+      modelUsed: selectedModel,
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+
+    setMessages([...nextMessages, placeholderMsg]);
+
+    let accumulatedText = "";
+    const historyPayload = nextMessages
+      .filter((m) => m.role === "user" || m.role === "assistant")
+      .slice(-8)
+      .map((m) => ({ role: m.role, content: m.content }));
 
     try {
-      const history = messages
-        .filter((m) => m.role === "user" || m.role === "assistant")
-        .slice(-8)
-        .map((m) => ({ role: m.role, content: m.content }));
+      await streamAgentMessage(
+        {
+          message: text.trim(),
+          history: historyPayload,
+          model: selectedModel,
+          apiKey: customApiKey || undefined,
+          topic: activeCategory,
+        },
+        (token) => {
+          accumulatedText += token;
+          setIsLoading(false);
+          setMessages((prev) => {
+            if (prev.length === 0) return prev;
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              ...updated[updated.length - 1],
+              content: accumulatedText,
+            };
+            return updated;
+          });
+        },
+        (meta) => {
+          setMessages((prev) => {
+            if (prev.length === 0) return prev;
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              ...updated[updated.length - 1],
+              action: meta.action ?? updated[updated.length - 1].action,
+              suggestedQuestions: meta.suggestedQuestions ?? updated[updated.length - 1].suggestedQuestions,
+              modelUsed: meta.modelUsed ?? updated[updated.length - 1].modelUsed,
+            };
+            return updated;
+          });
+        }
+      );
 
-      const res = await sendAgentMessage({
-        message: text.trim(),
-        history,
-        model: selectedModel,
-        apiKey: customApiKey || undefined,
-      });
+      setIsLoading(false);
+      setIsStreaming(false);
 
-      const assistantMsg: AgentChatMessage = {
-        role: "assistant",
-        content: res.response,
-        action: res.action,
-        modelUsed: res.modelUsed,
-        latencyMs: res.latencyMs,
-        source: res.source,
-        suggestedQuestions: res.suggestedQuestions,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      };
-
-      setMessages((prev) => [...prev, assistantMsg]);
-
-      if (ttsEnabled && typeof window !== "undefined" && "speechSynthesis" in window) {
-        speakText(res.response);
+      if (ttsEnabled && accumulatedText) {
+        speakAIResponse(accumulatedText, nextMessages.length);
       }
     } catch (err: any) {
-      const errorMsg: AgentChatMessage = {
-        role: "assistant",
-        content: `### ⚠️ Connection Notice
-Could not connect to online LLM endpoint. Fallback active:
+      console.warn("Stream interrupted, attempting standard fallback...", err);
+      // Fallback to standard chat endpoint if stream has an issue
+      try {
+        const res = await sendAgentMessage({
+          message: text.trim(),
+          history: historyPayload,
+          model: selectedModel,
+          apiKey: customApiKey || undefined,
+          topic: activeCategory,
+        });
 
-* **Recommendation:** Enter a custom Gemini, Groq, or OpenAI API key in the right sidebar or select the Offline Agronomy Engine.
-* **Error:** ${err?.message || "Service unavailable"}`,
-        modelUsed: "Offline Fallback",
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      };
-      setMessages((prev) => [...prev, errorMsg]);
-    } finally {
-      setIsLoading(false);
+        setMessages((prev) => {
+          if (prev.length === 0) return prev;
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            ...updated[updated.length - 1],
+            content: res.response,
+            action: res.action,
+            suggestedQuestions: res.suggestedQuestions,
+            modelUsed: res.modelUsed,
+            latencyMs: res.latencyMs,
+          };
+          return updated;
+        });
+
+        setIsLoading(false);
+        setIsStreaming(false);
+
+        if (ttsEnabled && res.response) {
+          speakAIResponse(res.response, nextMessages.length);
+        }
+      } catch (fallbackErr: any) {
+        setIsLoading(false);
+        setIsStreaming(false);
+        const errorText = "Sorry, I couldn't process that request right now. Please check your connection and try again.";
+        setMessages((prev) => {
+          if (prev.length === 0) return prev;
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            ...updated[updated.length - 1],
+            content: errorText,
+            modelUsed: "Error",
+          };
+          return updated;
+        });
+      }
     }
-  };
-
-  const speakText = (text: string) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const plain = text.replace(/[*#`_\[\]]/g, "").replace(/\(.*?\)/g, "").slice(0, 400);
-    const utterance = new SpeechSynthesisUtterance(plain);
-    utterance.rate = 1.05;
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    window.speechSynthesis.speak(utterance);
   };
 
   const stopSpeaking = () => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
+      setSpeakingMsgIndex(null);
+      activeUtteranceRef.current = null;
     }
+  };
+
+  const speakAIResponse = (rawText: string, msgIndex?: number) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+    // If clicking the speaker of the message that is ALREADY speaking -> Stop!
+    if (isSpeaking && msgIndex !== undefined && speakingMsgIndex === msgIndex) {
+      stopSpeaking();
+      return;
+    }
+
+    // Stop previous and resume speech synthesis pipeline
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.resume();
+
+    // 1. Clean markdown formatting, action cards, code fences, and special symbols
+    const clean = rawText
+      .replace(/\[ACTION_CARD:[\s\S]*?\]/g, "")
+      .replace(/```[\s\S]*?```/g, "")
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/[*#_~\[\]()|>-]/g, " ")
+      .replace(/https?:\/\/\S+/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!clean) return;
+
+    // Limit initial utterance length for responsive start
+    const speechText = clean.slice(0, 1000);
+
+    const utterance = new SpeechSynthesisUtterance(speechText);
+    activeUtteranceRef.current = utterance;
+    (window as any)._currentUtterance = utterance; // Prevent Chrome GC bug
+
+    // 2. Language & Script Detection
+    const hasKannada = /[\u0C80-\u0CFF]/.test(clean);
+    const hasHindi = /[\u0900-\u097F]/.test(clean);
+
+    let targetLang = "en-IN";
+    if (hasKannada) {
+      targetLang = "kn-IN";
+    } else if (hasHindi) {
+      targetLang = "hi-IN";
+    } else {
+      targetLang = voiceLang || "en-IN";
+    }
+
+    utterance.lang = targetLang;
+
+    // 3. Dynamic Voice Selection from browser's available voices
+    const currentVoices = voices.length > 0 ? voices : window.speechSynthesis.getVoices();
+    let selectedVoice: SpeechSynthesisVoice | undefined;
+
+    if (hasKannada) {
+      selectedVoice = currentVoices.find(
+        (v) =>
+          v.lang.toLowerCase().startsWith("kn") ||
+          v.name.toLowerCase().includes("kannada") ||
+          v.name.toLowerCase().includes("kn-in")
+      );
+    } else if (hasHindi) {
+      selectedVoice = currentVoices.find(
+        (v) =>
+          v.lang.toLowerCase().startsWith("hi") ||
+          v.name.toLowerCase().includes("hindi") ||
+          v.name.toLowerCase().includes("hi-in")
+      );
+    } else {
+      selectedVoice =
+        currentVoices.find(
+          (v) =>
+            v.lang.toLowerCase() === "en-in" ||
+            v.lang.toLowerCase().includes("in") ||
+            v.name.toLowerCase().includes("india")
+        ) || currentVoices.find((v) => v.lang.toLowerCase().startsWith("en"));
+    }
+
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+    }
+
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+      if (msgIndex !== undefined) setSpeakingMsgIndex(msgIndex);
+    };
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      setSpeakingMsgIndex(null);
+      activeUtteranceRef.current = null;
+    };
+
+    utterance.onerror = (e) => {
+      console.warn("Speech synthesis notice:", e);
+      setIsSpeaking(false);
+      setSpeakingMsgIndex(null);
+      activeUtteranceRef.current = null;
+    };
+
+    window.speechSynthesis.speak(utterance);
   };
 
   const handleSaveKey = () => {
@@ -244,14 +550,35 @@ Could not connect to online LLM endpoint. Fallback active:
     : presets.filter((p) => p.category === activeCategory);
 
   const categories = [
-    { id: "all", label: "All Topics", icon: Brain },
-    { id: "disease", label: "Disease & Fungicides", icon: Microscope },
-    { id: "irrigation", label: "Drip Irrigation", icon: Droplets },
-    { id: "economics", label: "Market & Pricing", icon: DollarSign },
-    { id: "nutrition", label: "NPK Nutrition", icon: FlaskConical },
-    { id: "pest", label: "Pest Management", icon: Bug },
-    { id: "climate", label: "Climate Defense", icon: CloudSun },
+    { id: "all", label: "All Topics", icon: Brain, subtitle: "Holistic precision agronomy" },
+    { id: "disease", label: "Disease & Fungicides", icon: Microscope, subtitle: "Pathology, fungicides & PHI" },
+    { id: "irrigation", label: "Drip Irrigation", icon: Droplets, subtitle: "L/tree/day & moisture schedules" },
+    { id: "economics", label: "Market & Pricing", icon: DollarSign, subtitle: "APMC Mandi vs. Pulp factory" },
+    { id: "nutrition", label: "NPK Nutrition", icon: FlaskConical, subtitle: "Basal doses, Boron & Zinc" },
+    { id: "pest", label: "Pest Management", icon: Bug, subtitle: "IPM, Leaf Hoppers & Traps" },
+    { id: "climate", label: "Climate Defense", icon: CloudSun, subtitle: "Heat stress & Kaolin shield" },
   ];
+
+  const activeTopicObj = categories.find((c) => c.id === activeCategory);
+
+  const getPlaceholderText = () => {
+    switch (activeCategory) {
+      case "disease":
+        return "Ask about fungicide dosages, Anthracnose spray schedules, bacterial canker...";
+      case "irrigation":
+        return "Ask about drip schedules, soil moisture target, VPD, pre-harvest cutoff...";
+      case "economics":
+        return "Ask about APMC Mandi rates, pulp factory profit, grading standards...";
+      case "nutrition":
+        return "Ask about NPK basal fertilizer, Solubor Boron sprays, Zinc deficiency...";
+      case "pest":
+        return "Ask about Mango Leaf Hoppers, Gall Midge, Fruit Fly pheromone traps...";
+      case "climate":
+        return "Ask about Kaolin clay sunburn protection, heatwaves, unseasonal rain...";
+      default:
+        return term("Ask about mango diseases, treatments, yields, irrigation, markets...");
+    }
+  };
 
   return (
     <PageTransition>
@@ -325,14 +652,15 @@ Could not connect to online LLM endpoint. Fallback active:
                   <button
                     key={cat.id}
                     onClick={() => setActiveCategory(cat.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium shrink-0 transition-all border ${
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold shrink-0 transition-all border ${
                       active
-                        ? "bg-yellow-500/20 border-yellow-500/40 text-yellow-300 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
-                        : "bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10"
+                        ? "bg-yellow-500/25 border-yellow-400/70 text-yellow-300 shadow-[0_0_16px_rgba(245,158,11,0.3)] ring-1 ring-yellow-400/40"
+                        : "bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20"
                     }`}
                   >
-                    <Icon className="h-3.5 w-3.5" />
+                    <Icon className={`h-3.5 w-3.5 ${active ? "text-yellow-400 scale-110" : "text-gray-400"}`} />
                     <span>{cat.label}</span>
+                    {active && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 ml-0.5 animate-pulse" />}
                   </button>
                 );
               })}
@@ -352,30 +680,63 @@ Could not connect to online LLM endpoint. Fallback active:
 
                 <div className="flex items-center gap-2">
                   <button
+                    type="button"
                     onClick={() => {
-                      if (isSpeaking) stopSpeaking();
-                      setTtsEnabled((prev) => !prev);
+                      if (isSpeaking) {
+                        stopSpeaking();
+                      } else {
+                        setTtsEnabled((prev) => !prev);
+                      }
                     }}
                     className={`px-2.5 py-1 rounded-lg border text-xs flex items-center gap-1.5 transition-all ${
-                      ttsEnabled
-                        ? "border-yellow-500/40 bg-yellow-500/15 text-yellow-400"
-                        : "border-white/10 text-gray-400 hover:text-white"
+                      isSpeaking
+                        ? "border-red-500/40 bg-red-500/20 text-red-300"
+                        : ttsEnabled
+                        ? "border-yellow-500/40 bg-yellow-500/15 text-yellow-400 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
+                        : "border-white/10 text-gray-400 hover:text-white hover:bg-white/5"
                     }`}
+                    title={
+                      isSpeaking
+                        ? "Click to Stop Audio"
+                        : ttsEnabled
+                        ? "Auto Audio Voice is ON — responses speak automatically"
+                        : "Click to enable Auto Audio Voice"
+                    }
                   >
                     {isSpeaking ? (
                       <>
-                        <Volume2 className="h-3.5 w-3.5 animate-bounce text-yellow-400" />
-                        <span>Speaking...</span>
+                        <Square className="h-3.5 w-3.5 fill-red-400 animate-pulse text-red-400" />
+                        <span className="font-semibold text-red-300">Stop Audio</span>
                       </>
                     ) : (
                       <>
-                        {ttsEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
-                        <span>Audio Voice</span>
+                        {ttsEnabled ? <Volume2 className="h-3.5 w-3.5 text-yellow-400" /> : <VolumeX className="h-3.5 w-3.5 text-gray-400" />}
+                        <span>Auto Voice {ttsEnabled ? "ON" : "OFF"}</span>
                       </>
                     )}
                   </button>
                 </div>
               </div>
+
+              {/* Active Specialized Domain Focus Banner */}
+              {activeCategory !== "all" && activeTopicObj && (
+                <div className="flex items-center justify-between px-5 py-2.5 bg-yellow-500/10 border-b border-yellow-500/20 text-xs">
+                  <div className="flex items-center gap-2 text-yellow-300">
+                    <activeTopicObj.icon className="h-4 w-4 text-yellow-400 shrink-0" />
+                    <span>
+                      <strong className="text-yellow-200">Active Focus:</strong> {activeTopicObj.label} &mdash;{" "}
+                      <span className="text-gray-300">{activeTopicObj.subtitle}</span>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory("all")}
+                    className="text-[11px] text-yellow-400/90 hover:text-yellow-200 underline font-medium ml-2 shrink-0 transition-colors"
+                  >
+                    Reset to All Topics
+                  </button>
+                </div>
+              )}
 
               {/* Message Stream */}
               <div className="flex-1 overflow-y-auto p-5 space-y-4 scrollbar-thin">
@@ -405,6 +766,30 @@ Could not connect to online LLM endpoint. Fallback active:
                           <span className="font-mono text-yellow-500 font-medium truncate">{msg.modelUsed || "MangoDL AI Copilot"}</span>
                           <div className="flex items-center gap-2 shrink-0">
                             {msg.latencyMs && <span>{msg.latencyMs}ms</span>}
+                            {/* Interactive Speaker Button */}
+                            <button
+                              type="button"
+                              onClick={() => speakAIResponse(msg.content, index)}
+                              className={`p-1 rounded-lg transition-all flex items-center gap-1 ${
+                                speakingMsgIndex === index
+                                  ? "text-red-400 bg-red-500/20 border border-red-500/40 shadow-[0_0_10px_rgba(239,68,68,0.3)]"
+                                  : "text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10"
+                              }`}
+                              title={
+                                speakingMsgIndex === index
+                                  ? "Click to Stop Audio"
+                                  : "Listen to this response (Kannada/Hindi/English)"
+                              }
+                            >
+                              {speakingMsgIndex === index ? (
+                                <>
+                                  <Square className="h-3.5 w-3.5 fill-red-400 animate-pulse" />
+                                  <span className="text-[10px] font-mono text-red-300 font-semibold pr-0.5">Stop</span>
+                                </>
+                              ) : (
+                                <Volume2 className="h-3.5 w-3.5" />
+                              )}
+                            </button>
                             <button
                               onClick={() => handleCopyText(msg.content, index)}
                               className="hover:text-yellow-400 transition-colors p-0.5"
@@ -417,9 +802,11 @@ Could not connect to online LLM endpoint. Fallback active:
                       )}
 
                       {/* Content Formatted */}
-                      <div className="space-y-2 whitespace-pre-wrap">
-                        {msg.content}
-                      </div>
+                      {msg.role === "assistant" ? (
+                        <MarkdownMessage content={msg.content} />
+                      ) : (
+                        <div className="font-medium whitespace-pre-wrap">{msg.content}</div>
+                      )}
 
                       {/* Action Card Rendering */}
                       {msg.action && (
@@ -487,47 +874,170 @@ Could not connect to online LLM endpoint. Fallback active:
               </div>
 
               {/* Quick Presets Drawer */}
-              <div className="px-5 py-2.5 border-t border-[var(--border-subtle)] bg-[var(--surface-soft)] flex gap-2 overflow-x-auto scrollbar-none">
+              <div className="px-5 py-2.5 border-t border-[var(--border-subtle)] bg-[var(--surface-soft)] flex gap-2 overflow-x-auto scrollbar-none items-center">
+                <span className="text-[11px] font-semibold text-gray-400 shrink-0 flex items-center gap-1">
+                  <Sparkles className="h-3 w-3 text-yellow-400" />
+                  {activeCategory === "all" ? "Quick Starters:" : `${activeTopicObj?.label} Prompts:`}
+                </span>
                 {filteredPresets.map((p) => (
                   <button
                     key={p.id}
                     onClick={() => handleSendMessage(p.prompt)}
-                    className="shrink-0 px-3 py-1.5 rounded-xl bg-[var(--background-elevated)] hover:bg-yellow-500/15 border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all text-left flex items-center gap-1.5"
+                    className="shrink-0 px-3 py-1.5 rounded-xl bg-[var(--background-elevated)] hover:bg-yellow-500/15 border border-[var(--border-subtle)] hover:border-yellow-500/40 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all text-left flex items-center gap-1.5"
                   >
-                    <Sparkles className="h-3 w-3 text-yellow-500" />
                     <span>{p.title}</span>
                   </button>
                 ))}
               </div>
 
               {/* Message Input Bar */}
-              <div className="border-t border-[var(--border-subtle)] p-4 bg-[var(--surface)]">
+              <div className="border-t border-[var(--border-subtle)] p-4 bg-[var(--surface)] space-y-2.5">
+                {/* Voice Status Alert / Live Listening Banner */}
+                <AnimatePresence>
+                  {isListening && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 6 }}
+                      className="flex items-center justify-between px-4 py-2 rounded-xl bg-red-500/15 border border-red-500/40 text-xs text-red-300 shadow-sm"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="relative flex h-2.5 w-2.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+                        </span>
+                        <span className="font-semibold text-white">
+                          {voiceLang === "kn-IN"
+                            ? "ಧ್ವನಿ ರೆಕಾರ್ಡಿಂಗ್ ನಡೆಯುತ್ತಿದೆ... (Listening in Kannada)"
+                            : voiceLang === "hi-IN"
+                            ? "आवाज रिकॉर्ड हो रही है... (Listening in Hindi)"
+                            : "Listening live... Speak in English or Hinglish"}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={stopListening}
+                        className="px-2.5 py-1 rounded-lg bg-red-500/30 hover:bg-red-500/50 text-white font-medium text-[11px] transition-colors"
+                      >
+                        Done Speaking
+                      </button>
+                    </motion.div>
+                  )}
+
+                  {voiceError && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 6 }}
+                      className="flex items-center justify-between px-4 py-2 rounded-xl bg-amber-500/15 border border-amber-500/40 text-xs text-amber-300"
+                    >
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                        <span>{voiceError}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setVoiceError(null)}
+                        className="text-[11px] text-gray-400 hover:text-white ml-2 underline"
+                      >
+                        Dismiss
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
+                    if (isListening) stopListening();
                     handleSendMessage();
                   }}
                   className="flex items-center gap-2"
                 >
+                  {/* Multilingual Voice Language Toggle */}
+                  <div className="flex items-center bg-white/5 border border-white/10 rounded-xl p-0.5 shrink-0" title="Select Voice Recognition Language">
+                    {(
+                      [
+                        { id: "en-IN", label: "EN", name: "English" },
+                        { id: "hi-IN", label: "हि", name: "Hindi" },
+                        { id: "kn-IN", label: "ಕ", name: "Kannada" },
+                      ] as const
+                    ).map((l) => (
+                      <button
+                        key={l.id}
+                        type="button"
+                        onClick={() => {
+                          setVoiceLang(l.id);
+                          if (typeof window !== "undefined") {
+                            localStorage.setItem("mangodl_voice_lang", l.id);
+                          }
+                          if (isListening) stopListening();
+                        }}
+                        className={`px-2 py-1.5 text-[11px] font-bold rounded-lg transition-all ${
+                          voiceLang === l.id
+                            ? "bg-yellow-500/30 text-yellow-300 border border-yellow-400/40 shadow-sm"
+                            : "text-gray-400 hover:text-white"
+                        }`}
+                        title={`Speech Recognition: ${l.name}`}
+                      >
+                        {l.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Real Voice Input Button */}
+                  {isListening ? (
+                    <button
+                      type="button"
+                      onClick={stopListening}
+                      className="h-11 w-11 rounded-xl bg-red-500/20 border border-red-500 text-red-400 flex items-center justify-center transition-all shrink-0 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.4)] cursor-pointer"
+                      title="Stop Voice Recording"
+                    >
+                      <Square className="h-4 w-4 fill-red-400" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={startListening}
+                      disabled={isLoading || isStreaming}
+                      className="h-11 w-11 rounded-xl bg-white/5 hover:bg-yellow-500/20 border border-white/10 hover:border-yellow-400/50 text-gray-300 hover:text-yellow-400 flex items-center justify-center transition-all shrink-0 group disabled:opacity-40 cursor-pointer"
+                      title={
+                        voiceLang === "kn-IN"
+                          ? "ಧ್ವನಿ ಮೂಲಕ ಪ್ರಶ್ನೆ ಕೇಳಿ (Speak in Kannada)"
+                          : voiceLang === "hi-IN"
+                          ? "बोलकर सवाल पूछें (Speak in Hindi)"
+                          : "Speak your agricultural query (English / Hinglish)"
+                      }
+                    >
+                      <Mic className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                    </button>
+                  )}
+
                   <input
                     ref={inputRef}
                     type="text"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    placeholder={term("Ask about mango diseases, treatments, yields...")}
-                    disabled={isLoading}
-                    className="flex-1 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500/50 focus:bg-white/10 transition-all disabled:opacity-50"
+                    placeholder={isListening ? "Listening live to your speech..." : getPlaceholderText()}
+                    disabled={isLoading || isStreaming}
+                    className={`flex-1 rounded-xl bg-white/5 border px-4 py-3 text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:bg-white/10 transition-all disabled:opacity-50 ${
+                      isListening ? "border-red-500/60 ring-1 ring-red-500/40" : "border-white/10 focus:border-yellow-500/50"
+                    }`}
                   />
 
                   <GlowButton
                     type="submit"
                     variant="mango"
                     size="sm"
-                    disabled={!inputValue.trim() || isLoading}
-                    className="h-11 px-5 rounded-xl shrink-0 flex items-center gap-2"
+                    disabled={!inputValue.trim() || isLoading || isStreaming}
+                    className="h-11 w-11 p-0 rounded-xl shrink-0 flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.35)] disabled:opacity-40 disabled:cursor-not-allowed"
+                    title={term("Send Message")}
                   >
-                    <span>{term("Send")}</span>
-                    <Send className="h-4 w-4" />
+                    {isLoading || isStreaming ? (
+                      <RefreshCw className="h-4 w-4 text-black animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4 text-black stroke-[2.5]" />
+                    )}
                   </GlowButton>
                 </form>
               </div>
